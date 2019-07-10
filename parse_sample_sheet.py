@@ -37,7 +37,7 @@ def identify_worksheet(ss_df):
     :param ss_df: the sample-related information from the Illumina sample sheet as a data frame
     :return: a string of the worksheet identifier for the run
     '''
-    worksheet_id = ss_df["Sample_Plate"].unique().tolist()[0]
+    worksheet_id = ss_df["Sample_Plate"].unique().tolist()[0] # Only one entry in list if there is one worksheet
     return worksheet_id
 
 
@@ -48,17 +48,14 @@ def locate_fastqs(ss_df, fq_loc):
     :param fq_loc:
     :return:
     '''
-    print(ss_df)
     # Create dictionary to hold information about fastqs
     sample_fastqs_dict = {}
     # Extract sample identifier (column 1 of sample sheet)
     sample_ids = ss_df["Sample_ID"] # Select as a series object
     for index_sample in sample_ids.iteritems():
-        sample = index_sample[1] # row labels not required
-        print(sample)
+        sample = index_sample[1] # row labels not required, data in first column of series
         # Create list of all fastqs matching sample id- all for upload into <sample>- pre-requisite to app launch
         sample_fastqs_list = (glob.glob(fq_loc + sample + '*'))
-        print(sample_fastqs_list)
         sample_fastqs_dict[sample] = sample_fastqs_list
     return sample_fastqs_dict
 
@@ -73,17 +70,24 @@ def load_config_file(pth):
     return config_json
 
 
-def create_basespace_project(project_name, conf):
+def create_basespace_project(project_name, conf): #/projects/32881883/datasets?Limit=50
     auth = 'Bearer ' + conf.get("authenticationToken")
-    response = requests.get(v2_api + "/projects/32881883/datasets?Limit=50",
+    response = requests.post(v1_api + "/projects", data={"name": "test_project"},
                             headers={"Authorization": auth},
                             allow_redirects=True)
     # print(response.headers.get('content-type'))
-    if response.status_code != 200:
+    if response.status_code != 200 and response.status_code != 201:
         print("error")
         print(response.status_code)
-    else:
-        return None
+    elif response.status_code == 200:
+        print(f"project {project_name} already exists and can be written to")
+        ###Obtain project id?
+    elif response.status_code == 201:
+        print(f"project {project_name} successfully created")
+        ###Obtain project id?
+
+
+        #return response.json().get("Items")
 
 
 def upload_fastqs_to_basespace():
@@ -95,7 +99,7 @@ def main():
     worksheet = identify_worksheet(parsed_sample_sheet)
     fastqs = locate_fastqs(parsed_sample_sheet, fastq_location)
     configs = load_config_file(config_file_pth)
-    create_basespace_project(worksheet, configs) # Note can save results to a different project through the gui
+    print(create_basespace_project(worksheet, configs)) # Note can save results to a different project through the gui
 
 
 
