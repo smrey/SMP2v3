@@ -32,17 +32,22 @@ def read_in_sample_sheet(ss):
     return ss_data_nona
 
 
+def identify_samples(ss_df):
+    # Extract sample identifiers (column 1 of sample sheet)
+    sample_ids = ss_df["Sample_ID"] # Select samples as a series object
+    return sample_ids
+
+
 def identify_worksheet(ss_df):
     '''
     :param ss_df: the sample-related information from the Illumina sample sheet as a data frame
     :return: a string of the worksheet identifier for the run
     '''
-    worksheet_id = ss_df["Sample_Plate"].unique().tolist()[0] # Only one entry in list if there is one worksheet
+    worksheet_id = ss_df["Sample_Plate"].unique().tolist()[0] # Only one entry in list if there is one worksheet- assumed
     return worksheet_id
 
 
-
-def locate_fastqs(ss_df, fq_loc):
+def locate_fastqs(samples, fq_loc):
     '''
     :param ss_df: the sample-related information from the Illumina sample sheet as a data frame
     :param fq_loc:
@@ -50,9 +55,8 @@ def locate_fastqs(ss_df, fq_loc):
     '''
     # Create dictionary to hold information about fastqs
     sample_fastqs_dict = {}
-    # Extract sample identifier (column 1 of sample sheet)
-    sample_ids = ss_df["Sample_ID"] # Select as a series object
-    for index_sample in sample_ids.iteritems():
+    # Iterate over all sample identifiers
+    for index_sample in samples.iteritems():
         sample = index_sample[1] # row labels not required, data in first column of series
         # Create list of all fastqs matching sample id- all for upload into <sample>- pre-requisite to app launch
         sample_fastqs_list = (glob.glob(fq_loc + sample + '*'))
@@ -70,36 +74,91 @@ def load_config_file(pth):
     return config_json
 
 
-def create_basespace_project(project_name, conf): #/projects/32881883/datasets?Limit=50
-    auth = 'Bearer ' + conf.get("authenticationToken")
-    response = requests.post(v1_api + "/projects", data={"name": "test_project"},
-                            headers={"Authorization": auth},
+def create_basespace_project(project_name, authorise): #/projects/32881883/datasets?Limit=50
+    '''
+    :param project_name: Worksheet id from the sample sheet, which will be the project name in BaseSpace
+    :param authorise:
+    :return:
+    '''
+    project_id = None
+    response = requests.post(v1_api + "/projects", data={"name": project_name},
+                            headers={"Authorization": authorise},
                             allow_redirects=True)
     # print(response.headers.get('content-type'))
     if response.status_code != 200 and response.status_code != 201:
         print("error")
         print(response.status_code)
     elif response.status_code == 200:
-        print(f"project {project_name} already exists and can be written to")
-        ###Obtain project id?
+        print(f"project {project_name} already exists and is writeable")
+        project_id = response.json().get("Response").get("Id")
     elif response.status_code == 201:
         print(f"project {project_name} successfully created")
-        ###Obtain project id?
+        project_id = response.json().get("Response").get("Id")
+    return project_id
 
 
-        #return response.json().get("Items")
+def create_appresults(samples, worksheet, proj_id, authorise):
+    appresults_dict = {}
+    for sample in samples.iteritems():
+        app_name = f"{sample[1]}_{worksheet}" # row labels not required, data in first column of series
+        appresult_id = create_an_appresult(app_name, proj_id, authorise)
+        appresults_dict[sample[1]] = appresult_id
+    return appresults_dict
+
+
+def create_an_appresult(appresult_name, proj_id, authorise):
+    '''
+    :param appresult_name:
+    :param proj_id:
+    :param authorise:
+    :return:
+    '''
+    appresult_id = None
+    response = requests.post(v1_api + "/projects/" + proj_id + "/appresults", data={"Name": appresult_name},
+                            headers={"Authorization": authorise},
+                            allow_redirects=True)
+    if response.status_code != 201:
+        print("error")
+        print(response.status_code)
+    elif response.status_code == 201:
+        print(f"appresult {appresult_name} successfully created")
+        appresult_id = response.json().get("Response").get("Id")
+    return appresult_id
+
+
+def initiate_upload(file_to_upload, appresult_id, authorise):
+    response = requests.post(v1_api + "/appresults/" + appresult_id, data={"name": file_worksheet},
+                             headers={"Authorization": authorise},
+                             allow_redirects=True)
+    return None
+
 
 
 def upload_fastqs_to_basespace():
+    #Iterate over multiple files per appresult (all fastqs per sample)
+    initiate_upload()
     return None
 
 
 def main():
+    # Parse sample sheet to extract relevant sample information
     parsed_sample_sheet = read_in_sample_sheet(ss_location)
+    # Pull out a series of samples to upload to BaseSpace
+    samples_to_upload = identify_samples(parsed_sample_sheet)
+    # Identify the worksheet number which will be used as the project name in BaseSpace
     worksheet = identify_worksheet(parsed_sample_sheet)
-    fastqs = locate_fastqs(parsed_sample_sheet, fastq_location)
+    # Locate the fastqs associated with each sample
+    fastqs = locate_fastqs(samples_to_upload, fastq_location)
+    # Load the config file containing user-specific information and obtain the authentication token
     configs = load_config_file(config_file_pth)
-    print(create_basespace_project(worksheet, configs)) # Note can save results to a different project through the gui
+    auth = 'Bearer ' + configs.get("authenticationToken")
+    # Create project and return BaseSpace project identifier
+    project = create_basespace_project(worksheet, auth) # Note can save results to a different project through the gui
+    # Create appresults to store files and return BaseSpace appresults identifier
+    create_appresults(samples_to_upload, worksheet, project, auth)
+    # Upload files into appresults
+
+
 
 
 
