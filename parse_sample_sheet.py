@@ -74,7 +74,7 @@ def load_config_file(pth):
     return config_json
 
 
-def create_basespace_project(project_name, authorise): #/projects/32881883/datasets?Limit=50
+def create_basespace_project(project_name, authorise):
     '''
     :param project_name: Worksheet id from the sample sheet, which will be the project name in BaseSpace
     :param authorise:
@@ -98,11 +98,19 @@ def create_basespace_project(project_name, authorise): #/projects/32881883/datas
 
 
 def create_appresults(samples, worksheet, proj_id, authorise):
+    '''
+    :param samples:
+    :param worksheet:
+    :param proj_id:
+    :param authorise:
+    :return:
+    '''
     appresults_dict = {}
-    for sample in samples.iteritems():
-        app_name = f"{sample[1]}_{worksheet}" # row labels not required, data in first column of series
+    for index_sample in samples.iteritems():
+        sample = index_sample[1]
+        app_name = f"{sample}_{worksheet}" # row labels not required, data in first column of series
         appresult_id = create_an_appresult(app_name, proj_id, authorise)
-        appresults_dict[sample[1]] = appresult_id
+        appresults_dict[app_name] = appresult_id
     return appresults_dict
 
 
@@ -126,37 +134,62 @@ def create_an_appresult(appresult_name, proj_id, authorise):
     return appresult_id
 
 
-def initiate_upload(file_to_upload, appresult_id, authorise):
-    response = requests.post(v1_api + "/appresults/" + appresult_id, data={"name": file_worksheet},
-                             headers={"Authorization": authorise},
-                             allow_redirects=True)
+def file_upload(appresults, files, authorise):
+    # Several files per sample, one sample per appresult, several appresults
+    for sample_worksheet in appresults.keys():
+        appid = appresults.get(sample_worksheet)
+        files_per_sample = files.get(sample_worksheet.split("_")[0]) # Key is sample name without worksheet id appended
+        upload_fastqs_to_basespace(files_per_sample, appid, authorise)
     return None
 
 
-
-def upload_fastqs_to_basespace():
+def upload_fastqs_to_basespace(all_fastqs_per_appresult, appresult_id, authorise):
     #Iterate over multiple files per appresult (all fastqs per sample)
-    initiate_upload()
+    print(appresult_id)
+    for fastq in all_fastqs_per_appresult:
+        print(fastq)
+        initiate_upload(fastq, appresult_id, authorise)
+    return None
+
+
+def initiate_upload(file_to_upload, appresult_id, authorise):
+    # WORKING HERE- SPLIT FILE INTO MULTIPART AND ADD MD5
+    response = requests.post(v1_api + "/appresults/" + appresult_id, data={"name": file_to_upload, "multipart": "true"},
+                             headers={"Authorization": authorise},
+                             allow_redirects=True)
+    if response.status_code != 200 and response.status_code != 201:
+        print("error")
+        print(response.status_code)
+    else:
+        print(response.json())
     return None
 
 
 def main():
     # Parse sample sheet to extract relevant sample information
     parsed_sample_sheet = read_in_sample_sheet(ss_location)
+
     # Pull out a series of samples to upload to BaseSpace
     samples_to_upload = identify_samples(parsed_sample_sheet)
+
     # Identify the worksheet number which will be used as the project name in BaseSpace
     worksheet = identify_worksheet(parsed_sample_sheet)
+
     # Locate the fastqs associated with each sample
     fastqs = locate_fastqs(samples_to_upload, fastq_location)
+
     # Load the config file containing user-specific information and obtain the authentication token
     configs = load_config_file(config_file_pth)
     auth = 'Bearer ' + configs.get("authenticationToken")
+
     # Create project and return BaseSpace project identifier
     project = create_basespace_project(worksheet, auth) # Note can save results to a different project through the gui
+
     # Create appresults to store files and return BaseSpace appresults identifier
-    create_appresults(samples_to_upload, worksheet, project, auth)
+    appresults_dictionary = create_appresults(samples_to_upload, worksheet, project, auth)
+
     # Upload files into appresults
+    file_upload(appresults_dictionary, fastqs, auth)
 
 
 
