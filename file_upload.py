@@ -5,6 +5,7 @@ import pandas as pd
 import glob
 import requests
 import json
+import os
 
 v1_api = "https://api.basespace.illumina.com/v1pre3"
 v2_api = "https://api.basespace.illumina.com/v2"
@@ -134,28 +135,36 @@ def create_an_appresult(appresult_name, proj_id, authorise):
     return appresult_id
 
 
-def file_upload_appresults(appresults, files, authorise):
+def file_upload(appresults, files, authorise):
     # Several files per sample, one sample per appresult, several appresults
     for sample_worksheet in appresults.keys():
         appid = appresults.get(sample_worksheet)
         files_per_sample = files.get(sample_worksheet.split("_")[0]) # Key is sample name without worksheet id appended
-        upload_fastqs_to_basespace_appresults(files_per_sample, appid, authorise)
+        upload_fastqs_to_basespace(files_per_sample, appid, authorise)
     return None
 
 
-def upload_fastqs_to_basespace_appresults(all_fastqs_per_appresult, appresult_id, authorise):
+def upload_fastqs_to_basespace(all_fastqs_per_appresult, appresult_id, authorise):
     #Iterate over multiple files per appresult (all fastqs per sample)
     print(appresult_id)
     for fastq in all_fastqs_per_appresult:
         print(fastq)
-        initiate_upload_appresults(fastq, appresult_id, authorise)
+        initiate_upload(fastq, appresult_id, authorise)
     return None
 
 
-def initiate_upload_appresults(file_to_upload, appresult_id, authorise):
-    response = requests.post(v1_api + "/appresults/" + appresult_id + "/files/", data={"name": file_to_upload, "multipart": "true"},
-                             headers={"Authorization": authorise}, # This part is not a valid content type "Content-Type": "Fastq"},
+def initiate_upload(file_to_upload, appresult_id, authorise):
+    file_name = os.path.basename(file_to_upload)
+    print(file_name)
+    url = v1_api + "/appresults/" + appresult_id + "/files"
+    p = {"name": "reportarchive.zip", "multipart":"true"}
+    print(url)
+    data = {"Content-Type": "application/zip", "Name": file_name}
+    head = {"Authorization": authorise}
+    response = requests.post(url, params=p, data=data, headers=head,
                              allow_redirects=True)
+    print(response.request.headers)
+    print(response.url)
     if response.status_code != 200: # and response.status_code != 201:
         print("error")
         print(response.status_code)
@@ -164,43 +173,7 @@ def initiate_upload_appresults(file_to_upload, appresult_id, authorise):
     return None
 
 
-def file_upload(authorise, files, project_id):
-    for sample in files.keys():
-        print(sample)
-        print(files.get(sample))
-        make_file(authorise, sample, project_id)
-        #for file in files.get(sample):
-            #initiate_upload(authorise, file, project_id)
-        break # break for testing
-    return None
 
-def make_file(authorise, file_name, project_id):
-    response = requests.post(v1_api + "/projects/" + project_id + "/samples/",
-                             data={"Name": file_name, "SampleId": file_name,
-                                   "SampleNumber": "3", "Read1": "1", "IsPairedEnd": "true"},  # "multipart": "true"},
-                             headers={"Authorization": authorise},
-                             # This part is not a valid content type "Content-Type": "Fastq"},
-                             allow_redirects=True)
-    if response.status_code != 200:
-        print("error")
-        print(response.status_code)
-        print(response.json())
-    else:
-        print(response.json())
-    return None # return file identifier (for later on)
-
-def initiate_upload(authorise, to_upload, project_id):
-    response = requests.post(v1_api + "/projects/" + project_id + "/samples/",
-                             data={"name": to_upload}, # "multipart": "true"},
-                             headers={"Authorization": authorise},
-                             # This part is not a valid content type "Content-Type": "Fastq"},
-                             allow_redirects=True)
-    if response.status_code != 200:
-        print("error")
-        print(response.status_code)
-    else:
-        print(response.json())
-    return None
 
 
 def main():
@@ -226,12 +199,18 @@ def main():
     # Create appresults to store files and return BaseSpace appresults identifier
     #appresults_dictionary = create_appresults(samples_to_upload, worksheet, project, auth)
 
-    # Upload files into appresults
-    #file_upload_appresults(appresults_dictionary, fastqs, auth)
+    # Upload files into appresults -
+    #file_upload(appresults_dictionary, fastqs, auth)
 
-    # Upload samples into project
-    # WORKING HERE- SPLIT FILE INTO MULTIPART AND ADD MD5
-    file_upload(auth, fastqs, project)
+
+
+    #use existing appresult for testing
+    response = requests.get(v1_api + "/projects/" + project + "/appresults",
+                             headers={"Authorization": auth},
+                             allow_redirects=True)
+    print(response.json().get('Response'))
+    initiate_upload("/Users/sararey/Documents/cruk_test_data/rawFQs/NA12877-A1_S1_L001_R1_001.fastq.gz", "234764918", auth)
+
 
 
 
