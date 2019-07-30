@@ -171,6 +171,7 @@ def initiate_upload(file_to_upload, appresult_id, authorise):
     if response.status_code != 200: # and response.status_code != 201:
         print("error")
         print(response.status_code)
+        print(response)
     else:
         print(response.json())
     return None
@@ -197,7 +198,7 @@ def main():
     auth = 'Bearer ' + configs.get("authenticationToken") #TODO This could be better as a global variable?
 
     # Create project and return BaseSpace project identifier
-    project = create_basespace_project(worksheet, auth) # Note can save results to a different project through the gui
+    ##project = create_basespace_project(worksheet, auth) # Note can save results to a different project through the gui
 
     # Create appresults to store files and return BaseSpace appresults identifier
     #appresults_dictionary = create_appresults(samples_to_upload, worksheet, project, auth)
@@ -208,10 +209,10 @@ def main():
 
 
     #use existing appresult for testing
-    response = requests.get(v1_api + "/projects/" + project + "/appresults",
-                             headers={"Authorization": auth},
-                             allow_redirects=True)
-    print(response.json().get('Response'))
+    ##response = requests.get(v1_api + "/projects/" + project + "/appresults",
+                             ##headers={"Authorization": auth},
+                             ##allow_redirects=True)
+    ##print(response.json().get('Response'))
     initiate_upload("/Users/sararey/Documents/cruk_test_data/rawFQs/NA12877-A1_S1_L001_R1_001.fastq.gz", "234764918", auth)
 
 
