@@ -71,7 +71,10 @@ def load_config_file(pth):
     :return:
     '''
     with open(pth + "bs.config.json") as config_file:
-        config_json = json.load(config_file)
+        try:
+            config_json = json.load(config_file)
+        except json.decoder.JSONDecodeError:
+            raise Exception("Config file does not contain valid json")
     return config_json
 
 
