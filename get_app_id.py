@@ -20,6 +20,7 @@ def load_config_file(pth):
     return config_json
 
 def get_applications(authorise):
+    applications = []
     url = v2_api + "/applications/"
     p = {"category": "Native", "limit": "150"}
     head = {"Authorization": authorise}
@@ -33,18 +34,35 @@ def get_applications(authorise):
     else:
         print(response.json().get("Items"))
         for i in (response.json().get("Items")):
+            applications.append(i.get("Name"))
             print(i.get("Name"))
-    return None
+    return applications
 
+def get_application(authorise, application_name):
+    application = f"No application with name {application_name} found"
+    url = v2_api + "/applications/"
+    p = {"category": "Native", "limit": "150"}
+    head = {"Authorization": authorise}
+    response = requests.get(url, params=p, headers=head, allow_redirects=True)
+    if response.status_code != 200: # and response.status_code != 201:
+        print("error")
+        print(response.status_code)
+        print(response)
+    else:
+        for i in (response.json().get("Items")):
+            if (i.get("Name") == application_name):
+                application = (f"Application {i.get('Name')} has ID {i.get('Id')}")
+    return application
 
 
 
 def main():
     # Load the config file containing user-specific information and obtain the authentication token
     configs = load_config_file(config_file_pth)
-    auth = 'Bearer ' + configs.get("authenticationToken")  # TODO This could be better as a global variable?
+    auth = 'Bearer ' + configs.get("authenticationToken")
 
-    get_applications(auth)
+    #get_applications(auth)
+    print(get_application(auth, "TruSight Tumor 170"))
 
 if __name__ == '__main__':
     main()
