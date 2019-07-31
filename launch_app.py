@@ -7,6 +7,11 @@ v2_api = "https://api.basespace.illumina.com/v2"
 
 config_file_pth = "/Users/sararey/PycharmProjects/CRUK/"
 
+
+project_id = "234764918" #temp
+dna_sample_id = "15642666" #temp
+rna_sample_id = "8957983" #temp
+
 def load_config_file(pth):
     '''
     :param pth: path to the location of the config file (usually location of the code)
@@ -19,14 +24,24 @@ def load_config_file(pth):
             raise Exception("Config file does not contain valid json")
     return config_json
 
-def generate_app_parameters(pth):
+
+def generate_app_parameters(pth, project_id):
     with open(pth + "app.config.template.json") as app_config_file:
         try:
             app_config = json.load(app_config_file)
             print(app_config)
+            properties_list = app_config.get("Properties")
+            for p in properties_list:
+                if p.get("Name") == "Input.project-id":
+                    p["Content"] = "v1pre3/projects/" + project_id
+                elif p.get("Name") == "Input.dna-sample-id":
+                    p["items"] = ["v2/biosamples/" + dna_sample_id]
+                elif p.get("Name") == "Input.rna-sample-id":
+                    p["items"] = ["v2/biosamples/" + rna_sample_id]
+            print(app_config)
         except json.decoder.JSONDecodeError:
             raise Exception("Config file does not contain valid json")
-    return None
+    return app_config
 
 def launch_application(authorise, app_parameters):
     url = v2_api + "/applications/"
@@ -54,7 +69,7 @@ def main():
     auth = 'Bearer ' + configs.get("authenticationToken")
 
     #launch_application(auth)
-    generate_app_parameters(config_file_pth)
+    generate_app_parameters(config_file_pth, project_id)
 
 if __name__ == '__main__':
     main()
