@@ -25,11 +25,10 @@ def load_config_file(pth):
     return config_json
 
 
-def generate_app_parameters(pth, project_id):
+def generate_app_config(pth, project_id):
     with open(pth + "app.config.template.json") as app_config_file:
         try:
             app_config = json.load(app_config_file)
-            print(app_config)
             properties_list = app_config.get("Properties")
             for p in properties_list:
                 if p.get("Name") == "Input.project-id":
@@ -38,16 +37,17 @@ def generate_app_parameters(pth, project_id):
                     p["items"] = ["v2/biosamples/" + dna_sample_id]
                 elif p.get("Name") == "Input.rna-sample-id":
                     p["items"] = ["v2/biosamples/" + rna_sample_id]
-            print(app_config)
         except json.decoder.JSONDecodeError:
             raise Exception("Config file does not contain valid json")
     return app_config
 
-def launch_application(authorise, app_parameters):
-    url = v2_api + "/applications/"
-    p = {app_parameters}
+
+def launch_application(authorise, app_conf, app_id):
+    url = v1_api + "/applications/" + app_id + "/appsessions/"
+    print(type(json.dumps(app_conf)))
+    d = {json.dumps(app_conf)}
     head = {"Authorization": authorise, "Content-Type": "application/json"}
-    response = requests.post(url, params=p, headers=head, allow_redirects=True)
+    response = requests.post(url, headers=head, data=d)
     print(response.request.headers)
     print(response.url)
     if response.status_code != 200: # and response.status_code != 201:
@@ -62,14 +62,15 @@ def launch_application(authorise, app_parameters):
 
 
 
-
 def main():
     # Load the config file containing user-specific information and obtain the authentication token
     configs = load_config_file(config_file_pth)
     auth = 'Bearer ' + configs.get("authenticationToken")
 
-    #launch_application(auth)
-    generate_app_parameters(config_file_pth, project_id)
+
+    app_config = generate_app_config(config_file_pth, project_id)
+    launch_application(auth, app_config, "6132126")
+
 
 if __name__ == '__main__':
     main()
