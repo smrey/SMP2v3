@@ -19,6 +19,7 @@ def load_config_file(pth):
             raise Exception("Config file does not contain valid json")
     return config_json
 
+
 def get_applications(authorise):
     applications = []
     url = v2_api + "/applications/"
@@ -38,10 +39,11 @@ def get_applications(authorise):
             print(i.get("Name"))
     return applications
 
+
 def get_application(authorise, application_name):
     application = f"No application with name {application_name} found"
     url = v2_api + "/applications/"
-    p = {"category": "Native", "limit": "150"}
+    p = {"category": "Native", "limit": "250"}
     head = {"Authorization": authorise}
     response = requests.get(url, params=p, headers=head, allow_redirects=True)
     if response.status_code != 200: # and response.status_code != 201:
@@ -55,6 +57,33 @@ def get_application(authorise, application_name):
     return application
 
 
+def get_app_info(authorise, app_id):
+    application = f"No application with name {app_id} found"
+    url = v2_api + "/applications/" + app_id
+    head = {"Authorization": authorise}
+    response = requests.get(url, headers=head, allow_redirects=True)
+    if response.status_code != 200: # and response.status_code != 201:
+        print("error")
+        print(response.status_code)
+        print(response)
+    else:
+        application = response.json()
+    return application
+
+
+def get_app_settings(authorise, app_id):
+    application = f"No application with name {app_id} found"
+    url = v2_api + "/applications/" + app_id + "/settings/"
+    head = {"Authorization": authorise}
+    response = requests.get(url, headers=head, allow_redirects=True)
+    if response.status_code != 200: # and response.status_code != 201:
+        print("error")
+        print(response.status_code)
+        print(response)
+    else:
+        application = response.json()
+    return application
+
 
 def main():
     # Load the config file containing user-specific information and obtain the authentication token
@@ -63,6 +92,9 @@ def main():
 
     #get_applications(auth)
     print(get_application(auth, "TruSight Tumor 170"))
+    print(get_app_info(auth, "6132126"))
+    #print(get_app_settings(auth, "6132126")) #unavailable (as this is not my app?)
+
 
 if __name__ == '__main__':
     main()

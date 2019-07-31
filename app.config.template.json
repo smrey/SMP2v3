@@ -1,0 +1,24 @@
+{
+  "Name": "TruSight Tumor 170 v1.0.3",
+  "StatusSummary": "AutoLaunch",
+  "AutoStart": false,
+  "Properties":
+  [
+    {
+      "Name": "Input.project-id",
+      "Type": "project",
+      "Content": "v1pre3/projects/123 "
+    },        
+    {
+      "Name": "Input.dna-sample-id",
+      "Type": "sample[]",
+      "items": [ "v1pre3/samples/123 " ]
+    },     
+ {
+      "Name": "Input.rna-sample-id",
+      "Type": "sample[]",
+      "items": [ "v1pre3/samples/123 " ]
+    }
+
+  ]
+}
