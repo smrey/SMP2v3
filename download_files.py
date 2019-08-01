@@ -43,18 +43,18 @@ def get_file_name_id(file_data_list):
     return dict_of_file_ids
 
 
-def download_files(authorise, files_to_dl, dl_to):
+def download_files(authorise, files_to_dl, dl_to, appresults_id):
     file_success = []
     for fn, dl in files_to_dl.items():
         file_success.append(download_file(authorise, fn, dl, dl_to))
-    return f"All files, {[x for x in file_success]} successfully downloaded"
+    return f"All files, {[x for x in file_success]} from appresult, {appresults_id}, successfully downloaded"
 
 
 def download_file(authorise, file_name, file_id, download_directory):
     file_downloaded = f"File {file_name} not completed download"
     if not os.path.exists(download_directory):
         os.makedirs(download_directory)
-    #TODO multipart download if required
+    #TODO multipart download if required- chunk file and reassemble
     url = f"{v1_api}/files/{file_id}/content/"
     p = {"redirect": "true"} #this may need to be set to meta
     head = {"Authorization": authorise}
@@ -77,9 +77,10 @@ def main():
 
     required_file_extensions = ".vcf" #,.bam"
 
+    #TODO Where there are multiple appresults, iterate through this and make final message about all files
     file_dict = get_files_from_appresult(auth, "42892893",  required_file_extensions)
     file_id = get_file_name_id(file_dict)
-    print(download_files(auth, file_id, dl_location))
+    print(download_files(auth, file_id, dl_location, "42892893"))
 
 
 if __name__ == '__main__':
