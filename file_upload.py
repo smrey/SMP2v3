@@ -1,6 +1,3 @@
-# Parse sample sheet to extract sampleid (col 1- header Sample_ID), sample name (col 2- header Sample_Name),
-# worksheet id (col 3- header Sample_plate)
-
 import pandas as pd
 import glob
 import requests
@@ -14,38 +11,6 @@ ss_location = "/Users/sararey/Documents/cruk_test_data/SampleSheet.csv" # to be 
 # Assumes IlluminaQC script has run- change path if demuxed fastqs will be located elsewhere
 fastq_location = "/Users/sararey/Documents/cruk_test_data/rawFQs/"
 config_file_pth = "/Users/sararey/PycharmProjects/CRUK/"
-
-
-def read_in_sample_sheet(ss):
-    '''
-    :param ss: the Illumina sample sheet
-    :return: a dataframe containing the sample-related information from the Illumina sample sheet
-    '''
-    # Locate index of header for sample information in sample sheet
-    header_index = False
-    with open(ss) as sample_sheet:
-        for index, line in enumerate(sample_sheet):
-            if line.startswith("Sample_ID"):
-                header_index = index
-    ss_data = pd.read_csv(ss_location, header=0, skiprows=header_index)
-    # Delete empty rows- use second column to handle case where a space may be entered into the first column
-    ss_data_nona = ss_data.dropna(subset=["Sample_Name"])
-    return ss_data_nona
-
-
-def identify_samples(ss_df):
-    # Extract sample identifiers (column 1 of sample sheet)
-    sample_ids = ss_df["Sample_ID"] # Select samples as a series object
-    return sample_ids
-
-
-def identify_worksheet(ss_df):
-    '''
-    :param ss_df: the sample-related information from the Illumina sample sheet as a data frame
-    :return: a string of the worksheet identifier for the run
-    '''
-    worksheet_id = ss_df["Sample_Plate"].unique().tolist()[0] # Only one entry in list if there is one worksheet- assumed
-    return worksheet_id
 
 
 def locate_fastqs(samples, fq_loc):
