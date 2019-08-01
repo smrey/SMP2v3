@@ -22,43 +22,52 @@ def load_config_file(pth):
     return config_json
 
 
-def get_files_from_appresult(authorise, appresultid):
-    url = v1_api + "/appresults/" + appresultid + "/files/"
-    p = {"Extensions": ".bam"}
+def get_files_from_appresult(authorise, appresultid, file_extensions):
+    files = None
+    url = f"{v1_api}/appresults/{appresultid}/files/"
+    p = {"Extensions": file_extensions}
     head = {"Authorization": authorise}
     response = requests.get(url, params=p, headers=head)
-    print(response.request.headers)
-    print(response.url)
-    if response.status_code != 200:  # and response.status_code != 201:
+    if response.status_code != 200:
         print("error")
         print(response.status_code)
-        print(response)
     else:
-        print(response.json())
-    return None
+        files = response.json().get("Response")
+    return files.get("Items")
 
 
-def get_file_id(authorise):
-    return None
+def get_file_name_id(file_data_list):
+    dict_of_file_ids = {}
+    for f in file_data_list:
+        dict_of_file_ids[f.get("Name")] = (f.get("Id"))
+    return dict_of_file_ids
 
 
-def download_file(authorise, file_id, download_directory):
+def download_files(authorise, files_to_dl, dl_to):
+    file_success = []
+    for fn, dl in files_to_dl.items():
+        file_success.append(download_file(authorise, fn, dl, dl_to))
+    return f"All files, {[x for x in file_success]} successfully downloaded"
+
+
+def download_file(authorise, file_name, file_id, download_directory):
+    file_downloaded = f"File {file_name} not completed download"
     if not os.path.exists(download_directory):
-        print("create directory")
-
-    url = v1_api + "/applications/" + file_id + "/content/"
+        os.makedirs(download_directory)
+    #TODO multipart download if required
+    url = f"{v1_api}/files/{file_id}/content/"
     p = {"redirect": "true"} #this may need to be set to meta
     head = {"Authorization": authorise}
     response = requests.get(url, params=p, headers=head)
-    print(response.request.headers)
-    print(response.url)
-    if response.status_code != 200:  # and response.status_code != 201:
-        print("error")
-        print(response.status_code)
-        print(response)
+    if response.status_code != 200:
+        raise Exception(f"Error response from API: {response.status_code}")
     else:
-        print(response.json())
-    return None
+        with open(os.path.join(dl_location, file_name), 'wb') as wf:
+            for chunk in response:
+                wf.write(chunk)
+            file_downloaded = f"File {file_name} downloaded"
+    print(file_downloaded)
+    return file_name
 
 
 def main():
@@ -66,11 +75,11 @@ def main():
     configs = load_config_file(config_file_pth)
     auth = 'Bearer ' + configs.get("authenticationToken")
 
-    # There will be one appresult per sample
+    required_file_extensions = ".vcf" #,.bam"
 
-    get_files_from_appresult(auth, "42892893")
-    #file_id = get_file_id(auth)
-    #download_file(auth, file_id, dl_location)
+    file_dict = get_files_from_appresult(auth, "42892893",  required_file_extensions)
+    file_id = get_file_name_id(file_dict)
+    print(download_files(auth, file_id, dl_location))
 
 
 if __name__ == '__main__':
