@@ -75,7 +75,7 @@ def main():
     configs = load_config_file(config_file_pth)
     auth = 'Bearer ' + configs.get("authenticationToken")
 
-    required_file_extensions = ".vcf" #,.bam"
+    required_file_extensions = ".vcf" #,.bam,.bai,.xlsx"
 
     #TODO Where there are multiple appresults, iterate through this and make final message about all files
     file_dict = get_files_from_appresult(auth, "42892893",  required_file_extensions)
