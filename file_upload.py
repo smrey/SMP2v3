@@ -111,6 +111,24 @@ def file_upload(appresults, files, authorise):
         upload_fastqs_to_basespace(files_per_sample, appid, authorise)
     return None
 
+# Makes an empty biosample to put files into
+def make_file(file_to_upload, project_id, authorise):
+    file_name = os.path.basename(file_to_upload)
+    print(file_name)
+    url = v1_api + "/projects/" + project_id + "/samples"
+    data = {"Name": "Ki", "SampleId": "Ki", "SampleNumber": "8", "Read1": "1", "IsPairedEnd": "false"}
+    head = {"Content-Type": "application/x-www-form-urlencoded", "Authorization": authorise, "User-Agent": "/python-requests/2.22.0"}
+    response = requests.post(url, headers=head, data=data, allow_redirects=True)
+    print(response.request.headers)
+    print(response.url)
+    if response.status_code != 200: # and response.status_code != 201:
+        print("error")
+        print(response.status_code)
+        print(response.json())
+    else:
+        print(response.json())
+    return None
+
 
 def upload_fastqs_to_basespace(all_fastqs_per_appresult, appresult_id, authorise):
     #Iterate over multiple files per appresult (all fastqs per sample)
