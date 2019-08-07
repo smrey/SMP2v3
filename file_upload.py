@@ -112,7 +112,7 @@ def file_upload(appresults, files, authorise):
     return None
 
 # Makes an empty biosample to put files into
-def make_file(file_to_upload, project_id, authorise):
+def make_sample(file_to_upload, project_id, authorise):
     file_name = os.path.basename(file_to_upload)
     print(file_name)
     url = v1_api + "/projects/" + project_id + "/samples"
@@ -121,12 +121,26 @@ def make_file(file_to_upload, project_id, authorise):
     response = requests.post(url, headers=head, data=data, allow_redirects=True)
     print(response.request.headers)
     print(response.url)
-    if response.status_code != 200: # and response.status_code != 201:
+    if response.status_code != 201: # and response.status_code != 201:
         print("error")
         print(response.status_code)
         print(response.json())
     else:
         print(response.json())
+    return None
+
+def make_file():
+    return None
+
+
+def upload_into_file(upload_file, file_id, authorisation):
+    part_num = "1"
+    url = f"{v1_api}/files/{file_id}/parts/{part_num}"
+    # Note can put MD5 checksum in header- Content-MD5??
+    head = {"Authorization": authorisation}
+    file = {"fn": open(upload_file, 'rb')}
+    response = requests.put(url, headers=head, files=file, allow_redirects=True)
+    print(response.json())
     return None
 
 
@@ -151,7 +165,8 @@ def initiate_upload(file_to_upload, appresult_id, authorise):
                              allow_redirects=True)
     print(response.request.headers)
     print(response.url)
-    if response.status_code != 200: # and response.status_code != 201:
+    print(response.status_code)
+    if response.status_code != 201: # and response.status_code != 201:
         print("error")
         print(response.status_code)
         print(response)
@@ -165,16 +180,16 @@ def initiate_upload(file_to_upload, appresult_id, authorise):
 
 def main():
     # Parse sample sheet to extract relevant sample information
-    parsed_sample_sheet = read_in_sample_sheet(ss_location)
+    #parsed_sample_sheet = read_in_sample_sheet(ss_location)
 
     # Pull out a series of samples to upload to BaseSpace
-    samples_to_upload = identify_samples(parsed_sample_sheet)
+    #samples_to_upload = identify_samples(parsed_sample_sheet)
 
     # Identify the worksheet number which will be used as the project name in BaseSpace
-    worksheet = identify_worksheet(parsed_sample_sheet)
+    #worksheet = identify_worksheet(parsed_sample_sheet)
 
     # Locate the fastqs associated with each sample
-    fastqs = locate_fastqs(samples_to_upload, fastq_location)
+    #fastqs = locate_fastqs(samples_to_upload, fastq_location)
 
     # Load the config file containing user-specific information and obtain the authentication token
     configs = load_config_file(config_file_pth)
@@ -196,8 +211,15 @@ def main():
                              ##headers={"Authorization": auth},
                              ##allow_redirects=True)
     ##print(response.json().get('Response'))
-    initiate_upload("/Users/sararey/Documents/cruk_test_data/rawFQs/NA12877-A1_S1_L001_R1_001.fastq.gz", "234764918", auth)
+    #initiate_upload("/Users/sararey/Documents/cruk_test_data/rawFQs/NA12877-A1_S1_L001_R1_001.fastq.gz", "234764918", auth)
+    make_sample("placeholder", "138381252", auth)
+    make_file()
 
+    #find file made
+
+
+
+    #upload_into_file("/Users/sararey/Documents/cruk_test_data/rawFQs/NTC_S24_L001_R1_001.fastq.gz", "274815873", auth)
 
 
 
