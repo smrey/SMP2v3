@@ -66,62 +66,17 @@ def create_basespace_project(project_name, authorise):
     return project_id
 
 
-def create_appresults(samples, worksheet, proj_id, authorise):
-    '''
-    :param samples:
-    :param worksheet:
-    :param proj_id:
-    :param authorise:
-    :return:
-    '''
-    appresults_dict = {}
-    for index_sample in samples.iteritems():
-        sample = index_sample[1]
-        app_name = f"{sample}_{worksheet}" # row labels not required, data in first column of series
-        appresult_id = create_an_appresult(app_name, proj_id, authorise)
-        appresults_dict[app_name] = appresult_id
-    return appresults_dict
-
-
-def create_an_appresult(appresult_name, proj_id, authorise):
-    '''
-    :param appresult_name:
-    :param proj_id:
-    :param authorise:
-    :return:
-    '''
-    appresult_id = None
-    response = requests.post(v1_api + "/projects/" + proj_id + "/appresults", data={"Name": appresult_name},
-                            headers={"Authorization": authorise},
-                            allow_redirects=True)
-    if response.status_code != 201:
-        print("error")
-        print(response.status_code)
-    elif response.status_code == 201:
-        print(f"appresult {appresult_name} successfully created")
-        appresult_id = response.json().get("Response").get("Id")
-    return appresult_id
-
-
-def file_upload(appresults, files, authorise):
-    # Several files per sample, one sample per appresult, several appresults
-    for sample_worksheet in appresults.keys():
-        appid = appresults.get(sample_worksheet)
-        files_per_sample = files.get(sample_worksheet.split("_")[0]) # Key is sample name without worksheet id appended
-        upload_fastqs_to_basespace(files_per_sample, appid, authorise)
-    return None
-
 # Makes an empty biosample to put files into
 def make_sample(file_to_upload, project_id, authorise):
     file_name = os.path.basename(file_to_upload)
     print(file_name)
-    url = v1_api + "/projects/" + project_id + "/samples"
+    url = f"{v1_api}/projects/{project_id}/samples"
     data = {"Name": "Ki", "SampleId": "Ki", "SampleNumber": "8", "Read1": "1", "IsPairedEnd": "false"}
     head = {"Content-Type": "application/x-www-form-urlencoded", "Authorization": authorise, "User-Agent": "/python-requests/2.22.0"}
     response = requests.post(url, headers=head, data=data, allow_redirects=True)
     print(response.request.headers)
     print(response.url)
-    if response.status_code != 201: # and response.status_code != 201:
+    if response.status_code != 201:
         print("error")
         print(response.status_code)
         print(response.json())
@@ -129,7 +84,38 @@ def make_sample(file_to_upload, project_id, authorise):
         print(response.json())
     return None
 
-def make_file():
+
+def make_file(file_to_upload, sample_id, authorise):
+    file_name = os.path.basename(file_to_upload)
+    print(file_name)
+    url = f"{v1_api}/samples/{sample_id}/files"
+    data = {"name": "filename"}
+    p = {"name": "filename.fastq.gz", "multipart": "true"}
+    head = {"Content-Type": "json/application", "Authorization": authorise, "User-Agent": "/python-requests/2.22.0"}
+    response = requests.post(url, headers=head, data=data, params=p, allow_redirects=True)
+    print(response.request.headers)
+    print(response.url)
+    if response.status_code != 201:
+        print("error")
+        print(response.status_code)
+        print(response.json())
+    else:
+        print(response.json())
+    return None
+
+
+def retrieve_sample_info(sample_id, authorise):
+    url = f"{v1_api}/samples/{sample_id}"
+    head = {"Authorization": authorise}
+    response = requests.get(url, headers=head, allow_redirects=True)
+    print(response.request.headers)
+    print(response.url)
+    if response.status_code != 200:
+        print("error")
+        print(response.status_code)
+        print(response.json())
+    else:
+        print(response.json())
     return None
 
 
@@ -144,37 +130,35 @@ def upload_into_file(upload_file, file_id, authorisation):
     return None
 
 
-def upload_fastqs_to_basespace(all_fastqs_per_appresult, appresult_id, authorise):
-    #Iterate over multiple files per appresult (all fastqs per sample)
-    print(appresult_id)
-    for fastq in all_fastqs_per_appresult:
-        print(fastq)
-        initiate_upload(fastq, appresult_id, authorise)
-    return None
-
-
-def initiate_upload(file_to_upload, appresult_id, authorise):
-    file_name = os.path.basename(file_to_upload)
-    print(file_name)
-    url = v1_api + "/appresults/" + appresult_id + "/files"
-    p = {"name": "reportarchive.zip", "multipart":"true"}
-    print(url)
-    data = {"Content-Type": "application/zip", "Name": file_name}
+def retrieve_file_info(file_id, authorise):
+    url = f"{v1_api}/files/{file_id}"
     head = {"Authorization": authorise}
-    response = requests.post(url, params=p, data=data, headers=head,
-                             allow_redirects=True)
+    response = requests.get(url, headers=head, allow_redirects=True)
     print(response.request.headers)
     print(response.url)
-    print(response.status_code)
-    if response.status_code != 201: # and response.status_code != 201:
+    if response.status_code != 200:
         print("error")
         print(response.status_code)
-        print(response)
+        print(response.json())
     else:
         print(response.json())
     return None
 
 
+def set_file_upload_status(file_id, file_status, authorisation):
+    url = f"{v1_api}/files/{file_id}"
+    p = {"uploadstatus": file_status}
+    head = {"Authorization": authorisation}
+    response = requests.post(url, headers=head, params=p, allow_redirects=True)
+    print(response.request.headers)
+    print(response.url)
+    if response.status_code != 201:
+        print("error")
+        print(response.status_code)
+        print(response.json())
+    else:
+        print(response.json())
+    return None
 
 
 
@@ -198,28 +182,17 @@ def main():
     # Create project and return BaseSpace project identifier
     ##project = create_basespace_project(worksheet, auth) # Note can save results to a different project through the gui
 
-    # Create appresults to store files and return BaseSpace appresults identifier
-    #appresults_dictionary = create_appresults(samples_to_upload, worksheet, project, auth)
-
-    # Upload files into appresults -
-    #file_upload(appresults_dictionary, fastqs, auth)
-
-
-
-    #use existing appresult for testing
-    ##response = requests.get(v1_api + "/projects/" + project + "/appresults",
-                             ##headers={"Authorization": auth},
-                             ##allow_redirects=True)
-    ##print(response.json().get('Response'))
-    #initiate_upload("/Users/sararey/Documents/cruk_test_data/rawFQs/NA12877-A1_S1_L001_R1_001.fastq.gz", "234764918", auth)
-    make_sample("placeholder", "138381252", auth)
-    make_file()
+    #make_sample("placeholder", "138381252", auth)
+    #make_file()
 
     #find file made
-
-
-
-    #upload_into_file("/Users/sararey/Documents/cruk_test_data/rawFQs/NTC_S24_L001_R1_001.fastq.gz", "274815873", auth)
+    retrieve_sample_info("274828624", auth) # does not appear in gui- sample status is aborted rather than complete
+    retrieve_sample_info("273269056", auth) # appears in gui
+    #make_file("/Users/sararey/Documents/cruk_test_data/rawFQs/NTC_S24_L001_R1_001.fastq.gz", "274828624", auth)
+    retrieve_file_info("15805554012", auth)
+    #upload_into_file("/Users/sararey/Documents/cruk_test_data/rawFQs/NTC_S24_L001_R1_001.fastq.gz", "15805554012", auth)
+    #set_file_upload_status("15805554012", "complete", auth)
+    retrieve_file_info("273269056", auth)
 
 
 
