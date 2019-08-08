@@ -95,7 +95,7 @@ def make_file(file_to_upload, sample_id, authorise):
     response = requests.post(url, headers=head, data=data, params=p, allow_redirects=True)
     print(response.request.headers)
     print(response.url)
-    if response.status_code != 201:
+    if response.status_code != 200:
         print("error")
         print(response.status_code)
         print(response.json())
@@ -108,8 +108,6 @@ def retrieve_sample_info(sample_id, authorise):
     url = f"{v1_api}/samples/{sample_id}"
     head = {"Authorization": authorise}
     response = requests.get(url, headers=head, allow_redirects=True)
-    print(response.request.headers)
-    print(response.url)
     if response.status_code != 200:
         print("error")
         print(response.status_code)
@@ -134,8 +132,6 @@ def retrieve_file_info(file_id, authorise):
     url = f"{v1_api}/files/{file_id}"
     head = {"Authorization": authorise}
     response = requests.get(url, headers=head, allow_redirects=True)
-    print(response.request.headers)
-    print(response.url)
     if response.status_code != 200:
         print("error")
         print(response.status_code)
@@ -161,6 +157,38 @@ def set_file_upload_status(file_id, file_status, authorisation):
     return None
 
 
+def finalise_sample_data(sample_id, authorise):
+    url = f"{v1_api}/samples/{sample_id}"
+    d = {"Name": "Ki", "SampleId": "Ki", "SampleNumber": "8", "Read1": "11", "IsPairedEnd": "true"}
+    head = {"Content-Type": "application/x-www-form-urlencoded", "Authorization": authorise, "User-Agent": "/python-requests/2.22.0"}
+    response = requests.post(url, headers=head, data=d, allow_redirects=True)
+    print(response.request.headers)
+    print(response.url)
+    if response.status_code != 201:
+        print("error")
+        print(response.status_code)
+        print(response.json())
+    else:
+        print(response.json())
+    return None
+
+
+def finalise_appsession(appsession_id, file_name, authorise):
+    url = f"{v2_api}/appsessions/{appsession_id}"
+    d = {"ExecutionStatus": "Complete", "StatusSummary": f"Finished uploading {file_name}"}
+    head = {"Content-Type": "application/x-www-form-urlencoded", "Authorization": authorise,
+            "User-Agent": "/python-requests/2.22.0"}
+    response = requests.post(url, headers=head, data=d, allow_redirects=True)
+    print(response.request.headers)
+    print(response.url)
+    if response.status_code != 200:
+        print("error")
+        print(response.status_code)
+        print(response.json())
+    else:
+        print(response.json())
+    return None
+
 
 def main():
     # Parse sample sheet to extract relevant sample information
@@ -183,16 +211,18 @@ def main():
     ##project = create_basespace_project(worksheet, auth) # Note can save results to a different project through the gui
 
     #make_sample("placeholder", "138381252", auth)
-    #make_file()
 
     #find file made
-    retrieve_sample_info("274828624", auth) # does not appear in gui- sample status is aborted rather than complete
+    retrieve_sample_info("274864035", auth) # does not appear in gui- sample status is aborted rather than complete
     retrieve_sample_info("273269056", auth) # appears in gui
-    #make_file("/Users/sararey/Documents/cruk_test_data/rawFQs/NTC_S24_L001_R1_001.fastq.gz", "274828624", auth)
-    retrieve_file_info("15805554012", auth)
-    #upload_into_file("/Users/sararey/Documents/cruk_test_data/rawFQs/NTC_S24_L001_R1_001.fastq.gz", "15805554012", auth)
-    #set_file_upload_status("15805554012", "complete", auth)
+    #make_file("/Users/sararey/Documents/cruk_test_data/rawFQs/NTC_S24_L001_R1_001.fastq.gz", "274864035", auth)
+    retrieve_file_info("15805819880", auth)
+    #upload_into_file("/Users/sararey/Documents/cruk_test_data/rawFQs/NTC_S24_L001_R1_001.fastq.gz", "15805819880", auth)
+    #set_file_upload_status("15805819880", "complete", auth)
     retrieve_file_info("273269056", auth)
+    # finalise bssh entity- update sample metadata
+    #finalise_sample_data("274864035", auth) #is info on num reads etc returned when upload? if so could add
+    #finalise_appsession("191236057", "file_name", auth)
 
 
 

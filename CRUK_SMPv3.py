@@ -1,7 +1,9 @@
 
 from parse_sample_sheet import ParseSampleSheet
+from split_file import SplitFile
 
 ss_location = "/Users/sararey/Documents/cruk_test_data/SampleSheet.csv" # to be commandline arg1
+file_to_split = "/Users/sararey/Documents/cruk_test_data/rawFQs/NA12877-A1_S1_L001_R1_001.fastq.gz"
 
 
 def main():
@@ -16,31 +18,17 @@ def main():
     worksheet = my_sample_sheet.identify_worksheet()
 
     # Locate the fastqs associated with each sample
-    fastqs = locate_fastqs(samples_to_upload, fastq_location)
+    #fastqs = locate_fastqs(samples_to_upload, fastq_location)
 
     # Load the config file containing user-specific information and obtain the authentication token
-    configs = load_config_file(config_file_pth)
-    auth = 'Bearer ' + configs.get("authenticationToken") #TODO This could be better as a global variable?
+    #configs = load_config_file(config_file_pth)
+    #auth = 'Bearer ' + configs.get("authenticationToken") #TODO This could be better as a global variable?
 
-    # Create project and return BaseSpace project identifier
-    ##project = create_basespace_project(worksheet, auth) # Note can save results to a different project through the gui
-
-    # Create appresults to store files and return BaseSpace appresults identifier
-    #appresults_dictionary = create_appresults(samples_to_upload, worksheet, project, auth)
-
-    # Upload files into appresults -
-    #file_upload(appresults_dictionary, fastqs, auth)
-
-
-
-    #use existing appresult for testing
-    ##response = requests.get(v1_api + "/projects/" + project + "/appresults",
-                             ##headers={"Authorization": auth},
-                             ##allow_redirects=True)
-    ##print(response.json().get('Response'))
-    #initiate_upload("/Users/sararey/Documents/cruk_test_data/rawFQs/NA12877-A1_S1_L001_R1_001.fastq.gz", "234764918", auth)
-
-
+    file_splitting = SplitFile(file_to_split)
+    file_size = file_splitting.file_size()
+    chunks = file_splitting.get_file_chunk_size()
+    print(chunks)
+    print(file_splitting.split_file(chunks))
 
 
 
