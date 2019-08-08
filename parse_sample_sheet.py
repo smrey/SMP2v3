@@ -49,3 +49,5 @@ class ParseSampleSheet:
         worksheet_id = self.sample_sheet_dataframe["Sample_Plate"].unique().tolist()[
             0]  # Only one entry in list if there is one worksheet- assumed
         return worksheet_id
+
+

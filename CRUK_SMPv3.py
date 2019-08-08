@@ -1,8 +1,12 @@
 
 from parse_sample_sheet import ParseSampleSheet
+from load_configuration import LoadConfiguration
 from split_file import SplitFile
 
 ss_location = "/Users/sararey/Documents/cruk_test_data/SampleSheet.csv" # to be commandline arg1
+fastq_location = "/Users/sararey/Documents/cruk_test_data/rawFQs/"
+config_file_path = "/Users/sararey/PycharmProjects/CRUK/"
+
 file_to_split = "/Users/sararey/Documents/cruk_test_data/rawFQs/NA12877-A1_S1_L001_R1_001.fastq.gz"
 
 
@@ -21,15 +25,25 @@ def main():
     #fastqs = locate_fastqs(samples_to_upload, fastq_location)
 
     # Load the config file containing user-specific information and obtain the authentication token
-    #configs = load_config_file(config_file_pth)
-    #auth = 'Bearer ' + configs.get("authenticationToken") #TODO This could be better as a global variable?
+    config = LoadConfiguration(config_file_path)
+    auth = config.get_authentication_token()
 
+    #file_to_split = "/Users/sararey/Documents/cruk_test_data/CellLine_Mixture_DNA_SmallVariants.genome.vcf" # testing
     file_splitting = SplitFile(file_to_split)
-    file_size = file_splitting.file_size()
     chunks = file_splitting.get_file_chunk_size()
     print(chunks)
-    print(file_splitting.split_file(chunks))
+    num_file_chunks_written = file_splitting.split_file(chunks)
 
+    md5_dict = {}
+    # files appended numbers with md5 hashes for upload
+    for i in range(num_file_chunks_written):
+        hash = file_splitting.calc_md5(f"{file_to_split}_{i + 1}")
+        md5_dict[i + 1] = hash
+
+        # upload file in here to save iterating twice (once to populate and once to read dictionary?)
+
+
+    print(md5_dict)
 
 
 
