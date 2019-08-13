@@ -1,5 +1,6 @@
 import requests
 import os
+from parse_sample_sheet import ParseSampleSheet
 
 v1_api = "https://api.basespace.illumina.com/v1pre3"
 v2_api = "https://api.basespace.illumina.com/v2"

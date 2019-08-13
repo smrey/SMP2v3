@@ -49,7 +49,7 @@ class ParseSampleSheet:
         return worksheet_id
 
 
-    def locate_fastqs(self, samples, fq_loc):
+    def locate_all_fastqs(self, samples, fq_loc):
         '''
         :param ss_df: the sample-related information from the Illumina sample sheet as a data frame
         :param fq_loc:

@@ -1,4 +1,4 @@
-
+import os
 from parse_sample_sheet import ParseSampleSheet
 from load_configuration import LoadConfiguration
 from split_file import SplitFile
@@ -22,8 +22,8 @@ def main():
     # Identify the worksheet number which will be used as the project name in BaseSpace
     worksheet = my_sample_sheet.identify_worksheet()
 
-    # Locate the fastqs associated with each sample
-    fastqs = my_sample_sheet.locate_fastqs(samples_to_upload, fastq_location)
+    # Locate the fastqs associated with all samples
+    all_fastqs = my_sample_sheet.locate_all_fastqs(samples_to_upload, fastq_location)
 
     # Load the config file containing user-specific information and obtain the authentication token
     config = LoadConfiguration(config_file_path)
@@ -33,12 +33,32 @@ def main():
     upload_file = FileUpload(authorisation)
     project = upload_file.create_basespace_project(worksheet)
 
-
     #file_to_split = "/Users/sararey/Documents/cruk_test_data/CellLine_Mixture_DNA_SmallVariants.genome.vcf" # testing
 
     # For each sample on worksheet
-    for sample in samples_to_upload:
-        print(sample)
+    for ind, sample in enumerate(samples_to_upload):
+        sample_num = ind + 1
+
+        # Create a sample inside the project in BaseSpace
+        #file_id = upload_file.make_sample(sample, sample_num)
+
+        # Pull out files associated with that particular sample
+        fastq_files = all_fastqs.get(sample)
+
+        # For each file associated with that sample
+        for f in fastq_files:
+            file_splitting = SplitFile(os.path.join(fastq_location, f))
+            chunks = file_splitting.get_file_chunk_size()
+            print(chunks)
+            num_file_chunks_written = file_splitting.split_file(chunks)
+            print(num_file_chunks_written)
+
+            # Delete file chunks after upload successful
+
+
+
+        break
+
 
     '''
     # Create a sample inside the project in BaseSpace
@@ -61,7 +81,7 @@ def main():
 
 
     print(md5_dict)
-'''
+    '''
 
 
 if __name__ == '__main__':
