@@ -2,6 +2,7 @@
 from parse_sample_sheet import ParseSampleSheet
 from load_configuration import LoadConfiguration
 from split_file import SplitFile
+from file_upload import FileUpload
 
 ss_location = "/Users/sararey/Documents/cruk_test_data/SampleSheet.csv" # to be commandline arg1
 fastq_location = "/Users/sararey/Documents/cruk_test_data/rawFQs/"
@@ -22,13 +23,28 @@ def main():
     worksheet = my_sample_sheet.identify_worksheet()
 
     # Locate the fastqs associated with each sample
-    #fastqs = locate_fastqs(samples_to_upload, fastq_location)
+    fastqs = my_sample_sheet.locate_fastqs(samples_to_upload, fastq_location)
 
     # Load the config file containing user-specific information and obtain the authentication token
     config = LoadConfiguration(config_file_path)
-    auth = config.get_authentication_token()
+    authorisation = config.get_authentication_token()
+
+    # Create a project in BaseSpace
+    upload_file = FileUpload(authorisation)
+    project = upload_file.create_basespace_project(worksheet)
+
 
     #file_to_split = "/Users/sararey/Documents/cruk_test_data/CellLine_Mixture_DNA_SmallVariants.genome.vcf" # testing
+
+    # For each sample on worksheet
+    for sample in samples_to_upload:
+        print(sample)
+
+    '''
+    # Create a sample inside the project in BaseSpace
+    file_details = upload_file.make_sample()
+
+    # For each file associated with that sample
     file_splitting = SplitFile(file_to_split)
     chunks = file_splitting.get_file_chunk_size()
     print(chunks)
@@ -43,8 +59,9 @@ def main():
         # upload file in here to save iterating twice (once to populate and once to read dictionary?)
 
 
-    print(md5_dict)
 
+    print(md5_dict)
+'''
 
 
 if __name__ == '__main__':
