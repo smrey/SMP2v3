@@ -43,7 +43,7 @@ class FileUpload:
         print(file_name)
         url = f"{v1_api}/projects/{self.project_id}/samples"
         data = {"Name": file_name, "SampleId": file_name, "SampleNumber": sample_number,
-                "Read1": "1", "Read2": "2", "IsPairedEnd": "true"} #TODO What are the read1 and read2 parameters for?
+                "Read1": "1", "Read2": "2", "IsPairedEnd": "true"} #TODO Read1 and Read2 parameters are the read lengths?
         head = {"Content-Type": "application/x-www-form-urlencoded", "Authorization": self.authorise,
                 "User-Agent": "/python-requests/2.22.0"}
         response = requests.post(url, headers=head, data=data, allow_redirects=True)

@@ -77,15 +77,15 @@ def main():
                 os.remove(f_chunk)
                 num_chunks_uploaded += 1
 
-            # Check all files uploaded
+            # Check all file parts uploaded
             if len(file_chunks_created) != num_chunks_uploaded:
                 raise Exception(f"Not all file chunks successfully uploaded for file {f}")
 
             # Set file status to complete
             upload_file.set_file_upload_status(file_id, "complete") #TODO this is giving an error- bad request
 
-            # Mark appsession as complete
-            upload_file.finalise_appsession(appsession_id, f)
+        # Mark appsession as complete
+        upload_file.finalise_appsession(appsession_id, sample)
 
 
         #break
