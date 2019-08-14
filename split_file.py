@@ -1,7 +1,7 @@
 import os
 from math import floor
 import hashlib
-import itertools
+import base64
 
 class SplitFile:
 
@@ -27,18 +27,26 @@ class SplitFile:
 
 
     def split_file(self, chunk_sizes):
-        num_files_written = 0
+        files_written = []
         with open(self.to_split, 'rb') as fr:
             for chunk_number, chunk in enumerate(chunk_sizes):
                 file_chunk = fr.read(chunk_sizes[chunk_number])
-                with open(f"{self.to_split}_{chunk_number + 1}", 'wb') as fw:
+                file_to_write = f"{self.to_split}_{chunk_number + 1}"
+                with open(file_to_write, 'wb') as fw:
                     fw.write(file_chunk)
-                    num_files_written += 1
-        return num_files_written
+                    files_written.append(file_to_write)
+        return files_written
 
 
-    def calc_md5(self, file_to_hash):
+    def calc_md5_hex(self, file_to_hash):
         hash = hashlib.md5()
         with open(file_to_hash, 'rb') as fr:
             hash.update(fr.read())
         return hash.hexdigest()
+
+    def calc_md5_b64(self, file_to_hash):
+        hash = hashlib.md5()
+        with open(file_to_hash, 'rb') as fr:
+            hash.update(fr.read())
+        return base64.b64encode(hash.digest())
+
