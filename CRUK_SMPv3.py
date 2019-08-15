@@ -59,7 +59,6 @@ def main():
         sample_metadata = upload_file.make_sample(sample, sample_num)
         sample_id = sample_metadata.get("sample_id")
         appsession_id = sample_metadata.get("appsession_id")
-        print(sample_id)
 
         # Pull out files associated with that particular sample
         fastq_files = all_fastqs.get(sample)
@@ -73,7 +72,6 @@ def main():
             file_splitting = SplitFile(os.path.join(fastq_location, f))
             chunks = file_splitting.get_file_chunk_size()
             file_chunks_created = file_splitting.split_file(chunks)
-            print(file_chunks_created)
 
             num_chunks_uploaded = 0
             for i, f_chunk in enumerate(file_chunks_created):
@@ -99,10 +97,6 @@ def main():
 
             # Set file status to complete
             upload_file.set_file_upload_status(file_id, "complete")
-
-        #break
-        # Finalise details of sample- metadata additions if required- not required
-        #upload_file.finalise_sample_data(sample_id) #TODO this is giving an error- bad request
 
         # Mark appsession as complete
         upload_file.finalise_appsession(appsession_id, sample)
