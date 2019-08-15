@@ -3,6 +3,7 @@ from parse_sample_sheet import ParseSampleSheet
 from load_configuration import LoadConfiguration
 from split_file import SplitFile
 from file_upload import FileUpload
+from poll_appsession_status import PollAppsessionStatus
 
 ss_location = "/Users/sararey/Documents/cruk_test_data/SampleSheet.csv" # to be commandline arg1
 fastq_location = "/Users/sararey/Documents/cruk_test_data/rawFQs/"
@@ -11,11 +12,10 @@ config_file_path = "/Users/sararey/PycharmProjects/CRUK/"
 file_to_split = "/Users/sararey/Documents/cruk_test_data/rawFQs/NA12877-A1_S1_L001_R1_001.fastq.gz"
 
 
-def sample_sheet_parse():
-    return None
-
 def upload_files():
     return None
+
+
 
 def launch_analysis():
     return None
@@ -28,6 +28,7 @@ def download_files():
 
 
 def main():
+    '''
     # Parse sample sheet to extract relevant sample information
     my_sample_sheet = ParseSampleSheet(ss_location)
     my_sample_sheet.read_in_sample_sheet()
@@ -37,19 +38,17 @@ def main():
 
     # Identify the worksheet number which will be used as the project name in BaseSpace
     worksheet = my_sample_sheet.identify_worksheet()
-
-    # Locate the fastqs associated with all samples
-    all_fastqs = my_sample_sheet.locate_all_fastqs(samples_to_upload, fastq_location)
-
+    '''
     # Load the config file containing user-specific information and obtain the authentication token
     config = LoadConfiguration(config_file_path)
     authorisation = config.get_authentication_token()
+    '''
+    # Locate the fastqs associated with all samples
+    all_fastqs = my_sample_sheet.locate_all_fastqs(samples_to_upload, fastq_location)
 
     # Create a project in BaseSpace
     upload_file = FileUpload(authorisation)
     project = upload_file.create_basespace_project(worksheet)
-
-    #file_to_split = "/Users/sararey/Documents/cruk_test_data/CellLine_Mixture_DNA_SmallVariants.genome.vcf" # testing
 
     # For each sample on worksheet
     for ind, sample in enumerate(samples_to_upload):
@@ -100,6 +99,22 @@ def main():
 
         # Mark appsession as complete
         upload_file.finalise_appsession(appsession_id, sample)
+    '''
+    # Launch application TODO Awaiting app launch json structure information
+    #TODO- examples set here for testing
+    appsession = "191564446" #Running appsession
+    appsession = "191598411" #Complete appsession
+
+    # Poll appsession status post launch
+    polling = PollAppsessionStatus(authorisation, appsession)
+    #print(polling.poll()) # Poll status of appsession
+
+    # Identify appresults
+    appresults = polling.find_appresults()
+
+    # Download files within appresults
+    # Iterate over all appresults
+    
 
 
 

@@ -1,6 +1,5 @@
 import requests
 import os
-from parse_sample_sheet import ParseSampleSheet
 
 v1_api = "https://api.basespace.illumina.com/v1pre3"
 v2_api = "https://api.basespace.illumina.com/v2"
@@ -18,7 +17,6 @@ class FileUpload:
         :param authorise:
         :return:
         '''
-        project_id = None
         response = requests.post(f"{v1_api}/projects", data={"name": project_name},
                                  headers={"Authorization": self.authorise},
                                  allow_redirects=True)
@@ -26,13 +24,13 @@ class FileUpload:
             raise Exception(f"BaseSpace error. Error code {response.status_code} message {response.json()}")
         elif response.status_code == 200:
             print(f"project {project_name} already exists and is writeable")
-            project_id = response.json().get("Response").get("Id")
+            # Update project id inside object
+            self.project_id = response.json().get("Response").get("Id")
         elif response.status_code == 201:
             print(f"project {project_name} successfully created")
-            project_id = response.json().get("Response").get("Id")
-        # Update project id inside object
-        self.project_id = project_id
-        return project_id
+            # Update project id inside object
+            self.project_id = response.json().get("Response").get("Id")
+        return self.project_id
 
 
     def make_sample(self, file_to_upload, sample_number):
@@ -71,9 +69,7 @@ class FileUpload:
         response = requests.put(url, headers=head, files=file, allow_redirects=True)
         if response.status_code != 200:
             raise Exception(f"BaseSpace error. Error code {response.status_code} message {response.json()}")
-        else:
-            md5 = response.json().get("Response").get("ETag")
-        return md5
+        return response.json().get("Response").get("ETag")
 
 
     def set_file_upload_status(self, file_id, file_status):
@@ -92,8 +88,6 @@ class FileUpload:
         head = {"Content-Type": "application/x-www-form-urlencoded", "Authorization": self.authorise,
                 "User-Agent": "/python-requests/2.22.0"}
         response = requests.post(url, headers=head, data=d, allow_redirects=True)
-        print(response.request.headers)
-        print(response.url)
         if response.status_code != 200:
             raise Exception(f"BaseSpace error. Error code {response.status_code} message {response.json()}")
         return f"AppSession {appsession_id} for file {file_name} set to status Complete"

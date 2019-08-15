@@ -1,0 +1,36 @@
+import requests
+import time
+import os
+import json
+
+v1_api = "https://api.basespace.illumina.com/v1pre3"
+v2_api = "https://api.basespace.illumina.com/v2"
+
+class PollAppsessionStatus:
+
+    def __init__(self, auth, appsession_id):
+        self.authorise = auth
+        self.appsession_id = appsession_id
+        self.sleep_time = 1800 # Half an hour in seconds #TODO adjust for app runtime
+
+
+    def poll(self):
+        url = f"{v2_api}/appsessions/{self.appsession_id}"
+        head = {"Authorization": self.authorise, "User-Agent": "/python-requests/2.22.0"}
+        response = requests.get(url, headers=head, allow_redirects=True)
+        if response.status_code != 200:
+            raise Exception(f"BaseSpace error. Error code {response.status_code} message {response.json()}")
+        else:
+            if response.json().get("ExecutionStatus") == "Complete":
+                return "All appsessions complete"
+            time.sleep(self.sleep_time)
+        return self.poll()
+
+
+    def find_appresults(self):
+        url = f"{v1_api}/appsessions/{self.appsession_id}/appresults"
+        head = {"Authorization": self.authorise, "User-Agent": "/python-requests/2.22.0"}
+        response = requests.get(url, headers=head, allow_redirects=True)
+        if response.status_code != 200:
+            raise Exception(f"BaseSpace error. Error code {response.status_code} message {response.json()}")
+        return [items.get("Id") for items in response.json().get("Response").get("Items")]

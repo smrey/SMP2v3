@@ -190,6 +190,40 @@ def finalise_appsession(appsession_id, file_name, authorise):
     return None
 
 
+def find_running_appsessions(authorise):
+    url = f"{v2_api}/appsessions"
+    p = {"executionstatus": "Running"}
+    head = {"Content-Type": "application/x-www-form-urlencoded", "Authorization": authorise,
+            "User-Agent": "/python-requests/2.22.0"}
+    response = requests.get(url, headers=head, params=p, allow_redirects=True)
+    print(response.request.headers)
+    print(response.url)
+    if response.status_code != 200:
+        print("error")
+        print(response.status_code)
+        print(response.json())
+    else:
+        print(response.json())
+    return None
+
+
+def find_complete_appsessions(authorise):
+    url = f"{v2_api}/appsessions"
+    p = {"executionstatus": "Complete"}
+    head = {"Content-Type": "application/x-www-form-urlencoded", "Authorization": authorise,
+            "User-Agent": "/python-requests/2.22.0"}
+    response = requests.get(url, headers=head, params=p, allow_redirects=True)
+    print(response.request.headers)
+    print(response.url)
+    if response.status_code != 200:
+        print("error")
+        print(response.status_code)
+        print(response.json())
+    else:
+        print(response.json())
+    return None
+
+
 def main():
     # Parse sample sheet to extract relevant sample information
     #parsed_sample_sheet = read_in_sample_sheet(ss_location)
@@ -223,7 +257,8 @@ def main():
     # finalise bssh entity- update sample metadata
     #finalise_sample_data("274864035", auth) #is info on num reads etc returned when upload? if so could add
     #finalise_appsession("191236057", "file_name", auth)
-
+    find_running_appsessions(auth)
+    find_complete_appsessions(auth)
 
 
 
