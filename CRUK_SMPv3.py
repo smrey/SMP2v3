@@ -11,6 +11,22 @@ config_file_path = "/Users/sararey/PycharmProjects/CRUK/"
 file_to_split = "/Users/sararey/Documents/cruk_test_data/rawFQs/NA12877-A1_S1_L001_R1_001.fastq.gz"
 
 
+def sample_sheet_parse():
+    return None
+
+def upload_files():
+    return None
+
+def launch_analysis():
+    return None
+
+def analysis_status():
+    return None
+
+def download_files():
+    return None
+
+
 def main():
     # Parse sample sheet to extract relevant sample information
     my_sample_sheet = ParseSampleSheet(ss_location)
@@ -82,15 +98,15 @@ def main():
                 raise Exception(f"Not all file chunks successfully uploaded for file {f}")
 
             # Set file status to complete
-            upload_file.set_file_upload_status(file_id, "complete") #TODO this is giving an error- bad request
+            upload_file.set_file_upload_status(file_id, "complete")
+
+        #break
+        # Finalise details of sample- metadata additions if required- not required
+        #upload_file.finalise_sample_data(sample_id) #TODO this is giving an error- bad request
 
         # Mark appsession as complete
         upload_file.finalise_appsession(appsession_id, sample)
 
-
-        #break
-        # Finalise details of sample- metadata additions if required
-        upload_file.finalise_sample_data(sample_id) #TODO add accurate figures for this
 
 
 if __name__ == '__main__':

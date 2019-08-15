@@ -23,7 +23,7 @@ class FileUpload:
                                  headers={"Authorization": self.authorise},
                                  allow_redirects=True)
         if response.status_code != 200 and response.status_code != 201:
-            raise Exception(f"An error occurred communicating with BaseSpace. Error code {response.status_code}")
+            raise Exception(f"BaseSpace error. Error code {response.status_code} message {response.json()}")
         elif response.status_code == 200:
             print(f"project {project_name} already exists and is writeable")
             project_id = response.json().get("Response").get("Id")
@@ -43,12 +43,12 @@ class FileUpload:
         print(file_name)
         url = f"{v1_api}/projects/{self.project_id}/samples"
         data = {"Name": file_name, "SampleId": file_name, "SampleNumber": sample_number,
-                "Read1": "1", "Read2": "2", "IsPairedEnd": "true"} #TODO Read1 and Read2 parameters are the read lengths?
+                "Read1": "1", "Read2": "2", "IsPairedEnd": "true"} #TODO Read1 and Read2 parameters are the read lengths
         head = {"Content-Type": "application/x-www-form-urlencoded", "Authorization": self.authorise,
                 "User-Agent": "/python-requests/2.22.0"}
         response = requests.post(url, headers=head, data=data, allow_redirects=True)
         if response.status_code != 201:
-            raise Exception(f"An error occurred communicating with BaseSpace. Error code {response.status_code}")
+            raise Exception(f"BaseSpace error. Error code {response.status_code} message {response.json()}")
         else:
             print(response.json())
             sample_identifier = response.json().get("Response").get("Id")
@@ -64,15 +64,13 @@ class FileUpload:
         file_identifier = None
         url = f"{v1_api}/samples/{sample_id}/files"
         #data = {"name": file_to_upload}
-        p = {"name": file_name, "multipart": "true"} #TODO make this the correct name
-        head = {"Content-Type": "json/application", "Authorization": self.authorise, "User-Agent": "/python-requests/2.22.0"}
+        p = {"name": file_name, "multipart": "true"}
+        head = {"Content-Type": "json/application", "Authorization": self.authorise,
+                "User-Agent": "/python-requests/2.22.0"}
         response = requests.post(url, headers=head, params=p, allow_redirects=True)
-        print(response.request.headers)
-        print(response.url)
         if response.status_code != 200:
-            raise Exception(f"An error occurred communicating with BaseSpace. Error code {response.status_code}")
+            raise Exception(f"BaseSpace error. Error code {response.status_code} message {response.json()}")
         else:
-            print(response.json())
             file_identifier = response.json().get("Response").get("Id")
         return file_identifier
 
@@ -84,7 +82,7 @@ class FileUpload:
         file = {"fn": open(upload_file, 'rb')}
         response = requests.put(url, headers=head, files=file, allow_redirects=True)
         if response.status_code != 200:
-            raise Exception(f"An error occurred communicating with BaseSpace. Error code {response.status_code}")
+            raise Exception(f"BaseSpace error. Error code {response.status_code} message {response.json()}")
         else:
             md5 = response.json().get("Response").get("ETag")
         return md5
@@ -98,15 +96,12 @@ class FileUpload:
         print(response.request.headers)
         print(response.url)
         if response.status_code != 201:
-            print("error")
-            print(response.status_code)
-            print(response.json())
-        else:
-            print(response.json())
-        return None
+            raise Exception(f"BaseSpace error. Error code {response.status_code} message {response.json()}")
+        return f"{response.json().get('Response').get('Name')} set to status {file_status}"
 
 
     def finalise_sample_data(self, sample_id):
+        # TODO Incomplete function do not use- bad request error
         url = f"{v1_api}/samples/{sample_id}"
         d = {"NumReadsPF": "1000000000", "NumReadsRaw": "1000000000"} #TODO make these correct values
         head = {"Content-Type": "application/x-www-form-urlencoded", "Authorization": self.authorise,
@@ -132,9 +127,7 @@ class FileUpload:
         print(response.request.headers)
         print(response.url)
         if response.status_code != 200:
-            print("error")
-            print(response.status_code)
-            print(response.json())
+            raise Exception(f"BaseSpace error. Error code {response.status_code} message {response.json()}")
         else:
             print(response.json())
-        return None
+        return f"AppSession {appsession_id} for file {file_name} set to status Complete"
