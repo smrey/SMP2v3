@@ -4,13 +4,19 @@ from load_configuration import LoadConfiguration
 from split_file import SplitFile
 from file_upload import FileUpload
 from poll_appsession_status import PollAppsessionStatus
+from identify_files_to_download import IdentifyFiles
+from download_files import DownloadFiles
 
-ss_location = "/Users/sararey/Documents/cruk_test_data/SampleSheet.csv" # to be commandline arg1
-fastq_location = "/Users/sararey/Documents/cruk_test_data/rawFQs/"
-config_file_path = "/Users/sararey/PycharmProjects/CRUK/"
+# testing file paths
+ss_location = "/Users/sararey/Documents/cruk_test_data/SampleSheet.csv" # to be commandline arg1- os.path.join() useful
+fastq_location = "/Users/sararey/Documents/cruk_test_data/rawFQs/" # results directory
+config_file_path = "/Users/sararey/PycharmProjects/CRUK/" # base pipeline directory
+output_directory = "/Users/sararey/Documents/cruk_test_data/downloaded/" # results directory
 
-file_to_split = "/Users/sararey/Documents/cruk_test_data/rawFQs/NA12877-A1_S1_L001_R1_001.fastq.gz"
+file_to_split = "/Users/sararey/Documents/cruk_test_data/rawFQs/NA12877-A1_S1_L001_R1_001.fastq.gz" # for testing
 
+download_file_extensions = ["vcf", "bam", "xml", "txt"] #TODO change from testing actual desired files ,.bam,.bai,.xlsx"
+download_file_extensions[0] = f".{download_file_extensions[0]}" # TODO make this clearer- add leading . for extension
 
 def upload_files():
     return None
@@ -28,7 +34,7 @@ def download_files():
 
 
 def main():
-    '''
+
     # Parse sample sheet to extract relevant sample information
     my_sample_sheet = ParseSampleSheet(ss_location)
     my_sample_sheet.read_in_sample_sheet()
@@ -38,7 +44,7 @@ def main():
 
     # Identify the worksheet number which will be used as the project name in BaseSpace
     worksheet = my_sample_sheet.identify_worksheet()
-    '''
+
     # Load the config file containing user-specific information and obtain the authentication token
     config = LoadConfiguration(config_file_path)
     authorisation = config.get_authentication_token()
@@ -97,7 +103,7 @@ def main():
             # Set file status to complete
             upload_file.set_file_upload_status(file_id, "complete")
 
-        # Mark appsession as complete
+        # Mark file upload appsession as complete
         upload_file.finalise_appsession(appsession_id, sample)
     '''
     # Launch application TODO Awaiting app launch json structure information
@@ -105,17 +111,40 @@ def main():
     appsession = "191564446" #Running appsession
     appsession = "191598411" #Complete appsession
 
-    # Poll appsession status post launch
+    # Poll appsession status post launch- runs until appsession is complete
     polling = PollAppsessionStatus(authorisation, appsession)
     #print(polling.poll()) # Poll status of appsession
 
     # Identify appresults
     appresults = polling.find_appresults()
+    print(appresults)
 
     # Download files within appresults
-    # Iterate over all appresults
-    
+    # Create directory for downloaded files where one does not exist
+    if not os.path.isdir(os.path.join(output_directory, worksheet)):
+        os.mkdir(os.path.join(output_directory, worksheet))
 
+    # Iterate over all appresults- one per sample
+    for sample, appresult in appresults.items():
+        # Make sample directory
+        if not os.path.isdir(os.path.join(output_directory, worksheet, sample)):
+            os.mkdir(os.path.join(output_directory, worksheet, sample))
+
+        find_files = IdentifyFiles(appresult, ",.".join(download_file_extensions), authorisation)
+        all_file_metadata = find_files.get_files_from_appresult()
+
+        # Iterate over identified files
+        file_download_success = []
+        for fl in all_file_metadata:
+            file_download = DownloadFiles(fl, os.path.join(output_directory, worksheet, sample), authorisation)
+            file_download_success.append(file_download.download_files())
+
+        if len(all_file_metadata) == len(file_download_success):
+            print(f"All files successfully downloaded for sample {sample}, appresult {appresult}")
+        else:
+            print(f"Files may be missing for sample {sample}, appresult {appresult}. Please check.")
+
+    print("Files downloaded for all samples and appresults")
 
 
 if __name__ == '__main__':
