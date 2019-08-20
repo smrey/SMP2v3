@@ -117,7 +117,6 @@ def main():
 
     # Identify appresults
     appresults = polling.find_appresults()
-    print(appresults)
 
     # Download files within appresults
     # Create directory for downloaded files where one does not exist
@@ -126,6 +125,7 @@ def main():
 
     # Iterate over all appresults- one per sample
     for sample, appresult in appresults.items():
+
         # Make sample directory
         if not os.path.isdir(os.path.join(output_directory, worksheet, sample)):
             os.mkdir(os.path.join(output_directory, worksheet, sample))
@@ -133,7 +133,7 @@ def main():
         find_files = IdentifyFiles(appresult, ",.".join(download_file_extensions), authorisation)
         all_file_metadata = find_files.get_files_from_appresult()
 
-        # Iterate over identified files
+        # Iterate over identified files of required file types
         file_download_success = []
         for fl in all_file_metadata:
             file_download = DownloadFiles(fl, os.path.join(output_directory, worksheet, sample), authorisation)
