@@ -3,6 +3,7 @@ from parse_sample_sheet import ParseSampleSheet
 from load_configuration import LoadConfiguration
 from split_file import SplitFile
 from file_upload import FileUpload
+from launch_app import LaunchApp
 from poll_appsession_status import PollAppsessionStatus
 from identify_files_to_download import IdentifyFiles
 from download_files import DownloadFiles
@@ -17,6 +18,9 @@ file_to_split = "/Users/sararey/Documents/cruk_test_data/rawFQs/NA12877-A1_S1_L0
 
 download_file_extensions = ["vcf", "bam", "xml", "txt"] #TODO change from testing actual desired files ,.bam,.bai,.xlsx"
 download_file_extensions[0] = f".{download_file_extensions[0]}" # TODO make this clearer- add leading . for extension
+
+app_name = "TruSight Tumor 170"
+app_version = "1.0.3"
 
 def upload_files():
     return None
@@ -107,7 +111,29 @@ def main():
         upload_file.finalise_appsession(appsession_id, sample)
     '''
     # Launch application TODO Awaiting app launch json structure information
-    #TODO- examples set here for testing
+    project = "140106975" #tmp variable for testing
+    config_file_pth = "/Users/sararey/PycharmProjects/CRUK/" #tmp variable for testing
+
+    launch = LaunchApp(authorisation, project, app_name, app_version)
+    app_config = launch.generate_app_config(config_file_pth, "198193717", "198263112")
+
+    # Find specific application ID for application and version number
+    launch.get_app_group_id()
+    print(launch.get_app_id())
+    print(launch.get_app_form_items(launch.get_app_form()))
+
+    #print("Launch")
+    #print(launch.getter())
+
+    print(launch.get_biosample_info("198193717"))
+
+    print(app_config)
+
+    print(launch.launch_application(app_config))
+
+
+    '''
+    # TODO- examples set here for testing
     appsession = "191564446" #Running appsession
     appsession = "191598411" #Complete appsession
 
@@ -145,7 +171,7 @@ def main():
             print(f"Files may be missing for sample {sample}, appresult {appresult}. Please check.")
 
     print("Files downloaded for all samples and appresults")
-
+    '''
 
 if __name__ == '__main__':
         main()
