@@ -137,8 +137,8 @@ def main():
     # Find specific application ID for application and version number
     launch.get_app_group_id()
     launch.get_app_id()
-    print(app_config)
 
+    # Launch application for all DNA and RNA samples
     appsession = launch.launch_application(app_config)
 
     # Poll appsession status post launch- runs until appsession is complete
