@@ -52,14 +52,16 @@ def main():
     # Load the config file containing user-specific information and obtain the authentication token
     config = LoadConfiguration(config_file_path)
     authorisation = config.get_authentication_token()
-    '''
+
     # Locate the fastqs associated with all samples
     all_fastqs = my_sample_sheet.locate_all_fastqs(samples_to_upload, fastq_location)
 
     # Create a project in BaseSpace
-    upload_file = FileUpload(authorisation)
-    project = upload_file.create_basespace_project(worksheet)
+    upload_file = FileUpload(authorisation, worksheet)
+    project = upload_file.create_basespace_project()
 
+
+    '''
     # For each sample on worksheet
     for ind, sample in enumerate(samples_to_upload):
         sample_num = ind + 1
@@ -107,39 +109,41 @@ def main():
             # Set file status to complete
             upload_file.set_file_upload_status(file_id, "complete")
 
+
         # Mark file upload appsession as complete
         upload_file.finalise_appsession(appsession_id, sample)
+
     '''
-    # Launch application TODO Awaiting app launch json structure information
-    project = "140106975" #tmp variable for testing
+
+
+    # Launch application
     config_file_pth = "/Users/sararey/PycharmProjects/CRUK/" #tmp variable for testing
 
     launch = LaunchApp(authorisation, project, app_name, app_version)
-    app_config = launch.generate_app_config(config_file_pth, "198193717", "198263112")
+
+    # Identify biosamples for upload
+    dna_biosample_ids = []
+    rna_biosample_ids = []
+    for sample in samples_to_upload:
+        biosample_id = launch.get_biosamples(f"{worksheet}-{sample}")
+        #TODO logic to identify and separate DNA and RNA samples
+        if sample == "NTC" or sample == "NA12877-B3":
+            rna_biosample_ids.append(biosample_id)
+        else:
+            dna_biosample_ids.append(biosample_id)
+
+    app_config = launch.generate_app_config(config_file_pth, dna_biosample_ids, rna_biosample_ids)
 
     # Find specific application ID for application and version number
     launch.get_app_group_id()
-    print(launch.get_app_id())
-    print(launch.get_app_form_items(launch.get_app_form()))
-
-    #print("Launch")
-    #print(launch.getter())
-
-    print(launch.get_biosample_info("198193717"))
-
+    launch.get_app_id()
     print(app_config)
 
-    print(launch.launch_application(app_config))
-
-
-    '''
-    # TODO- examples set here for testing
-    appsession = "191564446" #Running appsession
-    appsession = "191598411" #Complete appsession
+    appsession = launch.launch_application(app_config)
 
     # Poll appsession status post launch- runs until appsession is complete
     polling = PollAppsessionStatus(authorisation, appsession)
-    #print(polling.poll()) # Poll status of appsession
+    print(polling.poll()) # Poll status of appsession
 
     # Identify appresults
     appresults = polling.find_appresults()
@@ -171,7 +175,6 @@ def main():
             print(f"Files may be missing for sample {sample}, appresult {appresult}. Please check.")
 
     print("Files downloaded for all samples and appresults")
-    '''
 
 if __name__ == '__main__':
         main()

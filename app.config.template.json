@@ -1,8 +1,12 @@
 {
-  "AutoStart": true, 
-  "InputParameters":{"Input.app-session-name":"B",
-                                                     "dna-sample-id":"biosamples/198193717/librarypreps/1014015",
-                                                     "project-id":"projects/140106975",
-                                                     "rna-sample-id":"biosamples/198263112/librarypreps/1014015"},
-                                                     "Name": "TST Test",
-                                                     "StatusSummary":"Test Launch"}
+  "AutoStart":true,
+  "InputParameters":
+    {
+    "app-session-name":"Example [LocalDateTime]",
+    "dna-sample-id":["biosamples//librarypreps/", ""],
+    "project-id":"projects/",
+    "rna-sample-id":["biosamples//librarypreps/", ""]
+    },
+    "Name":"TruSight Tumor 170",
+    "StatusSummary":"CRUK Launch"
+  }

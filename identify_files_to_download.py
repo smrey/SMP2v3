@@ -18,7 +18,7 @@ class IdentifyFiles:
         head = {"Authorization": self.authorise}
         response = requests.get(url, params=p, headers=head)
         if response.status_code != 200:
-            raise Exception(f"BaseSpace error. Error code {response.status_code} message {response.json()}")
+            raise Exception(f"BaseSpace error. Error code {response.status_code} message {response.text}")
         else:
             self.files = response.json().get("Response").get("Items")
         return self.files

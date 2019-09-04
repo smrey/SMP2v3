@@ -1,14 +1,10 @@
 import requests
 import json
 import os
+import datetime
 
 v1_api = "https://api.basespace.illumina.com/v1pre3"
 v2_api = "https://api.basespace.illumina.com/v2"
-
-
-#project_id = "234764918" #temp
-#dna_sample_id = "15642666" #temp
-#rna_sample_id = "8957983" #temp
 
 class LaunchApp:
 
@@ -21,29 +17,40 @@ class LaunchApp:
         self.app_id = None
 
 
-    def generate_app_config_old(self, pth, dna_sample_id, rna_sample_id):
+    def get_biosamples(self, biosample_name):
+        url = v2_api + "/biosamples"
+        p = {"biosamplename": biosample_name, "projectid": self.project_id}
+        head = {"Authorization": self.authorise, "Content-Type": "application/json"}
+        response = requests.get(url, headers=head, params=p)
+        if response.status_code != 200:
+            raise Exception(f"BaseSpace error. Error code {response.status_code} message {response.text}")
+        return response.json().get("Items")[0].get("Id") #TODO Make this more robust
+
+
+    def generate_app_config(self, pth, dna_biosample_ids, rna_biosample_ids):
+        # Generate list of biosamples in correct format for application launch
+        dna_list = []
+        for dna_biosample_id in dna_biosample_ids:
+            dna_libraryprep_id = self.get_biosample_info(dna_biosample_id)
+            dna_list.append(f"biosamples/{dna_biosample_id}/librarypreps/{dna_libraryprep_id}")
+        rna_list = []
+        for rna_biosample_id in rna_biosample_ids:
+            rna_libraryprep_id = self.get_biosample_info(rna_biosample_id)
+            rna_list.append(f"biosamples/{rna_biosample_id}/librarypreps/{rna_libraryprep_id}")
+        # Obtain date and time
+        current_time = datetime.datetime.now()
+        # remove seconds from date and time and create string
+        date_time = ":".join(str(current_time).split(":")[:-1])
         with open(os.path.join(pth, "app.config.template.json")) as app_config_file:
             try:
                 app_config = json.load(app_config_file)
-                properties_list = app_config.get("Properties")
-                for p in properties_list:
-                    if p.get("Name") == "Input.project-id":
-                        p["Content"] = "projects/" + self.project_id
-                    elif p.get("Name") == "Input.dna-sample-id":
-                        p["items"] = ["biosamples/" + dna_sample_id + "/librarypreps/1014015"]
-                    elif p.get("Name") == "Input.rna-sample-id":
-                        p["items"] = ["v2/biosamples/" + rna_sample_id + "/librarypreps/1014015"]
+                input = app_config.get("InputParameters")
+                input["dna-sample-id"] = dna_list
+                input["project-id"] = f"projects/{self.project_id}"
+                input["rna-sample-id"] = rna_list
+                app_config["Name"] = f"TruSight Tumour 170 {date_time}"
             except json.decoder.JSONDecodeError:
-                raise Exception("Config file does not contain valid json")
-        return app_config
-
-
-    def generate_app_config(self, pth, dna_sample_id, rna_sample_id):
-        with open(os.path.join(pth, "app.config.template.json")) as app_config_file:
-            try:
-                app_config = json.load(app_config_file)
-            except json.decoder.JSONDecodeError:
-                raise Exception("Config file does not contain valid json")
+                raise Exception("Config file is incorrectly formatted and does not contain valid json")
         return app_config
 
 
@@ -53,7 +60,7 @@ class LaunchApp:
         head = {"Authorization": self.authorise, "Content-Type": "application/json"}
         response = requests.get(url, headers=head, params=p)
         if response.status_code != 200:
-            raise Exception(f"BaseSpace error. Error code {response.status_code} message {response.json()}")
+            raise Exception(f"BaseSpace error. Error code {response.status_code} message {response.text}")
         else:
             for i in response.json().get("Response").get("Items"):
                 if i.get("Name") == self.app_name:
@@ -67,7 +74,7 @@ class LaunchApp:
         head = {"Authorization": self.authorise, "Content-Type": "application/json"}
         response = requests.get(url, headers=head, params=p)
         if response.status_code != 200:
-            raise Exception(f"BaseSpace error. Error code {response.status_code} message {response.json()}")
+            raise Exception(f"BaseSpace error. Error code {response.status_code} message {response.text}")
         else:
             for i in response.json().get("Response").get("Items"):
                 if i.get("VersionNumber") == self.app_version:
@@ -76,13 +83,12 @@ class LaunchApp:
 
 
     def get_app_form(self):
-        a = None
         url = v1_api + "/applications/" + self.app_id + "/assets/forms"
         p = {"status":"active"}
         head = {"Authorization": self.authorise, "Content-Type": "application/json"}
         response = requests.get(url, headers=head, params=p)
         if response.status_code != 200:
-            raise Exception(f"BaseSpace error. Error code {response.status_code} message {response.json()}")
+            raise Exception(f"BaseSpace error. Error code {response.status_code} message {response.text}")
         else:
             app_form_id = response.json().get("Response").get("Items")[0] #TODO Set this line raise exception if >1
         return str(app_form_id.get("Id"))
@@ -93,10 +99,10 @@ class LaunchApp:
         head = {"Authorization": self.authorise, "Content-Type": "application/json"}
         response = requests.get(url, headers=head)
         if response.status_code != 200:
-            raise Exception(f"BaseSpace error. Error code {response.status_code} message {response.json()}")
+            raise Exception(f"BaseSpace error. Error code {response.status_code} message {response.text}")
         else:
-            print(response.json())
-        return None
+            response = response.json()
+        return response
 
 
     def getter(self):
@@ -104,7 +110,7 @@ class LaunchApp:
         head = {"Authorization": self.authorise, "Content-Type": "application/json"}
         response = requests.get(url, headers=head)
         if response.status_code != 200:
-            raise Exception(f"BaseSpace error. Error code {response.status_code} message {response.json()}")
+            raise Exception(f"BaseSpace error. Error code {response.status_code} message {response.text}")
         else:
             print(response.text)
         return None
@@ -115,41 +121,16 @@ class LaunchApp:
         p = {"Limit":200, "Offset":0}
         head = {"Authorization": self.authorise, "Content-Type": "application/json"}
         response = requests.get(url, headers=head, params=p)
-        print(response.request.headers)
-        print(response.url)
         if response.status_code != 200:
-            print("error")
-            print(response.status_code)
-            print(response)
-        else:
-            print(response.json().get("Items"))
-            for i in (response.json().get("Items")):
-                print(i.get("Name"))
+            raise Exception(f"BaseSpace error. Error code {response.status_code} message {response.text}")
         return response.json().get("Items")[0].get("LibraryPrep").get("Id") #TODO Set this line raise exception if >1
 
 
     def launch_application(self, app_conf):
         url = v2_api + "/applications/" + self.app_id + "/launch/"
-        print(type(json.dumps(app_conf)))
-        d = {json.dumps(app_conf)}
-        '''
-        d = {"AutoStart": True, "InputParameters":{"app-session-name":"Example [LocalDateTime]",
-                                                     "dna-sample-id":"biosamples/198193717/librarypreps/1014015",
-                                                     "project-id":"projects/140106975",
-                                                     "rna-sample-id":"biosamples/198263112/librarypreps/1014015"},
-                                                     "Name": "TST Test",
-                                                     "StatusSummary":"Test Launch"}
-        '''
-        head = {"Authorization": self.authorise, "Content-Type": "application/json"}
+        d = json.dumps(app_conf)
+        head = {"Content-Type": "application/json", "Authorization": self.authorise}
         response = requests.post(url, headers=head, data=d)
-        print(response.request.headers)
-        print(response.url)
-        if response.status_code != 200:
-            print("error")
-            print(response.status_code)
-            print(response.text)
-        else:
-            print(response.json().get("Items"))
-            for i in (response.json().get("Items")):
-                print(i.get("Name"))
-        return None
+        if response.status_code != 201:
+            raise Exception(f"BaseSpace error. Error code {response.status_code} message {response.text}")
+        return response.json().get("Id")

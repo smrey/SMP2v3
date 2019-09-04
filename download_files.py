@@ -20,7 +20,7 @@ class DownloadFiles:
         head = {"Authorization": self.authorise}
         response = requests.get(url, params=p, headers=head)
         if response.status_code != 200:
-            raise Exception(f"BaseSpace error. Error code {response.status_code} message {response.json()}. "
+            raise Exception(f"BaseSpace error. Error code {response.status_code} message {response.text}. "
                             f"File {file_name} not completed download")
         else:
             with open(os.path.join(self.download_location, file_name), 'wb') as wf:

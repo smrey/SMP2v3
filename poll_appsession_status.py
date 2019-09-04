@@ -19,7 +19,7 @@ class PollAppsessionStatus:
         head = {"Authorization": self.authorise, "User-Agent": "/python-requests/2.22.0"}
         response = requests.get(url, headers=head, allow_redirects=True)
         if response.status_code != 200:
-            raise Exception(f"BaseSpace error. Error code {response.status_code} message {response.json()}")
+            raise Exception(f"BaseSpace error. Error code {response.status_code} message {response.text}")
         else:
             if response.json().get("ExecutionStatus") == "Complete":
                 return "All appsessions complete"
@@ -32,6 +32,6 @@ class PollAppsessionStatus:
         head = {"Authorization": self.authorise, "User-Agent": "/python-requests/2.22.0"}
         response = requests.get(url, headers=head, allow_redirects=True)
         if response.status_code != 200:
-            raise Exception(f"BaseSpace error. Error code {response.status_code} message {response.json()}")
+            raise Exception(f"BaseSpace error. Error code {response.status_code} message {response.text}")
         print(response.json().get("Response").get("Items"))
         return {items.get("Name"): items.get("Id") for items in response.json().get("Response").get("Items")}
