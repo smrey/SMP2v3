@@ -9,10 +9,10 @@ from identify_files_to_download import IdentifyFiles
 from download_files import DownloadFiles
 
 # testing file paths
-ss_location = "/Users/sararey/Documents/cruk_test_data/SampleSheet.csv" # to be commandline arg1- os.path.join() useful
-fastq_location = "/Users/sararey/Documents/cruk_test_data/rawFQs/" # results directory
-config_file_path = "/Users/sararey/PycharmProjects/CRUK/" # base pipeline directory
-output_directory = "/Users/sararey/Documents/cruk_test_data/downloaded/" # results directory
+ss_location = os.getcwd() # to be commandline arg1- os.path.join() useful
+fastq_location = os.getcwd() # results directory
+config_file_path = "/data/diagnostics/pipelines/CRUK/CRUK-2.0.0/" # TODO import version from illuminaQC
+output_directory = os.getcwd() # results directory
 
 download_file_extensions = ["vcf", "bam", "bai"] #TODO change from testing actual desired files ,.bam,.bai,.xlsx"
 download_file_extensions[0] = f".{download_file_extensions[0]}" # TODO make this clearer- add leading . for extension
