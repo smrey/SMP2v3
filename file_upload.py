@@ -24,11 +24,11 @@ class FileUpload:
         if response.status_code != 200 and response.status_code != 201:
             raise Exception(f"BaseSpace error. Error code {response.status_code} message {response.text}")
         elif response.status_code == 200:
-            print(f"project {self.project_name} already exists and is writeable")
+            print(f"Project {self.project_name} already exists and is writeable")
             # Update project id inside object
             self.project_id = response.json().get("Response").get("Id")
         elif response.status_code == 201:
-            print(f"project {self.project_name} successfully created")
+            print(f"Project {self.project_name} successfully created")
             # Update project id inside object
             self.project_id = response.json().get("Response").get("Id")
         return self.project_id

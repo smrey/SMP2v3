@@ -14,9 +14,7 @@ fastq_location = "/Users/sararey/Documents/cruk_test_data/rawFQs/" # results dir
 config_file_path = "/Users/sararey/PycharmProjects/CRUK/" # base pipeline directory
 output_directory = "/Users/sararey/Documents/cruk_test_data/downloaded/" # results directory
 
-file_to_split = "/Users/sararey/Documents/cruk_test_data/rawFQs/NA12877-A1_S1_L001_R1_001.fastq.gz" # for testing
-
-download_file_extensions = ["vcf", "bam", "xml", "txt"] #TODO change from testing actual desired files ,.bam,.bai,.xlsx"
+download_file_extensions = ["vcf", "bam", "bai"] #TODO change from testing actual desired files ,.bam,.bai,.xlsx"
 download_file_extensions[0] = f".{download_file_extensions[0]}" # TODO make this clearer- add leading . for extension
 
 app_name = "TruSight Tumor 170"
@@ -60,8 +58,6 @@ def main():
     upload_file = FileUpload(authorisation, worksheet)
     project = upload_file.create_basespace_project()
 
-
-    '''
     # For each sample on worksheet
     for ind, sample in enumerate(samples_to_upload):
         sample_num = ind + 1
@@ -113,9 +109,6 @@ def main():
         # Mark file upload appsession as complete
         upload_file.finalise_appsession(appsession_id, sample)
 
-    '''
-
-
     # Launch application
     config_file_pth = "/Users/sararey/PycharmProjects/CRUK/" #tmp variable for testing
 
@@ -126,11 +119,13 @@ def main():
     rna_biosample_ids = []
     for sample in samples_to_upload:
         biosample_id = launch.get_biosamples(f"{worksheet}-{sample}")
-        #TODO logic to identify and separate DNA and RNA samples
-        if sample == "NTC" or sample == "NA12877-B3":
+        #TODO logic to identify and separate DNA and RNA samples- finalise
+        if sample.split("_")[-1] == "RNA":
             rna_biosample_ids.append(biosample_id)
-        else:
+        elif sample.split("_")[-1] == "DNA":
             dna_biosample_ids.append(biosample_id)
+        else:
+            raise Exception(f"Could not identify if sample {sample} is a DNA or an RNA sample")
 
     app_config = launch.generate_app_config(config_file_pth, dna_biosample_ids, rna_biosample_ids)
 
@@ -139,11 +134,14 @@ def main():
     launch.get_app_id()
 
     # Launch application for all DNA and RNA samples
+    print(f"Launching {app_name} {app_version}")
     appsession = launch.launch_application(app_config)
 
     # Poll appsession status post launch- runs until appsession is complete
+    print(f"Polling status of application")
     polling = PollAppsessionStatus(authorisation, appsession)
-    print(polling.poll()) # Poll status of appsession
+    polling.poll() # Poll status of appsession
+    print("Appsession complete")
 
     # Identify appresults
     appresults = polling.find_appresults()
@@ -155,6 +153,8 @@ def main():
 
     # Iterate over all appresults- one per sample
     for sample, appresult in appresults.items():
+
+        print(f"Downloading results for sample {sample}")
 
         # Make sample directory
         if not os.path.isdir(os.path.join(output_directory, worksheet, sample)):
