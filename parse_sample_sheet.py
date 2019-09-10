@@ -44,8 +44,7 @@ class ParseSampleSheet:
         :param ss_df: the sample-related information from the Illumina sample sheet as a data frame
         :return: a string of the worksheet identifier for the run
         '''
-        worksheet_id = self.sample_sheet_dataframe["Sample_Plate"].unique().tolist()[
-            0]  # Only one entry in list if there is one worksheet- assumed
+        worksheet_id = self.sample_sheet_dataframe["Sample_Plate"].unique().tolist()[0]  # Only one entry in list if there is one worksheet- assumed
         return worksheet_id
 
 

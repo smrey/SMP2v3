@@ -1,0 +1,11 @@
+name: SMP2v3
+channels:
+  - defaults
+dependencies:
+  - pandas=0.24.2
+  - pip=19.1.1
+  - python=3.7.3
+  - python-dateutil=2.8.0
+  - requests=2.22.0
+prefix: /miniconda2/envs/cruk
+
