@@ -15,7 +15,7 @@ config_file_path = "/data/diagnostics/pipelines/CRUK/CRUK-2.0.0/" # TODO import 
 output_directory = os.getcwd() # results directory
 
 download_file_extensions = ["vcf", "bam", "bai"] #TODO change from testing actual desired files ,.bam,.bai,.xlsx"
-download_file_extensions[0] = f".{download_file_extensions[0]}" # TODO make this clearer- add leading . for extension
+download_file_extensions[0] = f".{download_file_extensions[0]}" # TODO make this clearer- adds leading . for 1st extension
 
 app_name = "TruSight Tumor 170"
 app_version = "1.0.3"

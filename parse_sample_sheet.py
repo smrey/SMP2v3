@@ -5,9 +5,9 @@ import pandas as pd
 import glob
 import os
 
-ss_location = "/Users/sararey/Documents/cruk_test_data/SampleSheet.csv" # to be commandline arg1
+#ss_location = "/Users/sararey/Documents/cruk_test_data/SampleSheet.csv" # to be commandline arg1
 # Assumes IlluminaQC script has run- change path if demuxed fastqs will be located elsewhere
-fastq_location = "/Users/sararey/Documents/cruk_test_data/rawFQs/"
+#fastq_location = "/Users/sararey/Documents/cruk_test_data/rawFQs/"
 
 
 class ParseSampleSheet:
@@ -21,13 +21,14 @@ class ParseSampleSheet:
         :param ss: the Illumina sample sheet
         :return: a dataframe containing the sample-related information from the Illumina sample sheet
         '''
-        # Locate index of header for sample information in sample sheet
+        # Locate index of header for sample information in sample sheet- assumes sample sheet name is SampleSheet.csv
+        open_sample_sheet = os.path.join(self.sample_sheet_dir, "SampleSheet.csv")
         header_index = False
-        with open(self.sample_sheet_dir) as sample_sheet:
+        with open(open_sample_sheet) as sample_sheet:
             for index, line in enumerate(sample_sheet):
                 if line.startswith("Sample_ID"):
                     header_index = index
-        ss_data = pd.read_csv(ss_location, header=0, skiprows=header_index)
+        ss_data = pd.read_csv(open_sample_sheet, header=0, skiprows=header_index)
         # Delete empty rows- use second column to handle case where a space may be entered into the first column
         self.sample_sheet_dataframe = ss_data.dropna(subset=["Sample_Name"])
         return self.sample_sheet_dataframe
