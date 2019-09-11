@@ -39,7 +39,7 @@ class FileUpload:
         file_name = os.path.basename(file_to_upload)
         url = f"{v1_api}/projects/{self.project_id}/samples"
         data = {"Name": f"{self.project_name}-{file_name}", "SampleId": f"{self.project_name}-{file_name}",
-                "SampleNumber": sample_number, "Read1": "1", "Read2": "2", "IsPairedEnd": "true"} #TODO Read1 and Read2 parameters are the read lengths
+                "SampleNumber": sample_number, "Read1": "101", "Read2": "101", "IsPairedEnd": "true"}
         head = {"Content-Type": "application/x-www-form-urlencoded", "Authorization": self.authorise,
                 "User-Agent": "/python-requests/2.22.0"}
         response = requests.post(url, headers=head, data=data, allow_redirects=True)

@@ -29,8 +29,9 @@ class PollAppsessionStatus:
 
     def find_appresults(self):
         url = f"{v1_api}/appsessions/{self.appsession_id}/appresults"
+        p = {"Limit": 30}
         head = {"Authorization": self.authorise, "User-Agent": "/python-requests/2.22.0"}
-        response = requests.get(url, headers=head, allow_redirects=True)
+        response = requests.get(url, headers=head, params=p, allow_redirects=True)
         if response.status_code != 200:
             raise Exception(f"BaseSpace error. Error code {response.status_code} message {response.text}")
         print(response.json().get("Response").get("Items"))
