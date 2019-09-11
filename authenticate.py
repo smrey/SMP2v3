@@ -23,9 +23,9 @@ def load_config_file(pth):
     return config_json
 
 
-def get_verification_device_code(client_id, requested_scope, resource):
-    if resource != None: # Handle this better in production
-        requested_scope = f"{requested_scope} {resource}"
+def get_verification_device_code(client_id, requested_scope):
+    #if resource != None: # Handle this better in production
+        #requested_scope = f"{requested_scope} {resource}"
     device_code = None
     url = f"{v1_api}/oauthv2/deviceauthorization"
     p = {"client_id": client_id, "response_type": "device_code", "scope": requested_scope}
@@ -87,7 +87,8 @@ def main():
     auth = 'Bearer ' + configs.get("authenticationToken")
 
     # Start here for new authentication workflow
-    code = get_verification_device_code(configs.get("clientId"), "browse global, create global, create projects", None)
+    code = get_verification_device_code(configs.get("clientId"),
+                                        "browse global, create global, create projects, start applications")
     token = poll_for_access_token(configs, code)
 
     update_config_file(config_file_pth, token)
