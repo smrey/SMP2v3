@@ -1,13 +1,11 @@
 # authenticate to obtain access token with write permissions
 import requests
 import json
-import os
 
 v1_api = "https://api.basespace.illumina.com/v1pre3"
 v2_api = "https://api.basespace.illumina.com/v2"
 
 config_file_pth = "/Users/sararey/PycharmProjects/CRUK/"
-dl_location = "/Users/sararey/Documents/cruk_test_data/"
 
 
 def load_config_file(pth):
@@ -39,24 +37,13 @@ def get_verification_device_code(client_id, requested_scope, resource):
     return files
 
 
-
 def main():
     # Load the config file containing user-specific information and obtain the authentication token
     configs = load_config_file(config_file_pth)
     auth = 'Bearer ' + configs.get("authenticationToken")
 
     # Start here for new authentication workflow
-    resource_id = "197471854" #biosample- not working error 400
-    resource_id = "273695116" #sample- not working error 400
-    resource_id = "138381252" #project- working
-    #print(get_verification_device_code(configs.get("clientId"), "create global", None))
-    print(get_verification_device_code(configs.get("clientId"), "write project", resource_id))
-
-    response = requests.get(v1_api + "/samples/273695116",
-                             headers={"Authorization": auth},
-                             allow_redirects=True)
-    print(response.json().get('Response'))
-
+    print(get_verification_device_code(configs.get("clientId"), "create global", None))
 
 
 if __name__ == '__main__':
