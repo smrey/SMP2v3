@@ -144,6 +144,7 @@ def main():
     print(f"Appsession complete {appsession}")
 
     # Identify appresults
+    # Add variable appsessionid if downloading without applaunch
     appresults = polling.find_appresults()
 
     # Download files within appresults

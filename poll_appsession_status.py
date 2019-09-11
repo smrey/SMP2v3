@@ -27,8 +27,10 @@ class PollAppsessionStatus:
         return self.poll()
 
 
-    def find_appresults(self):
-        url = f"{v1_api}/appsessions/{self.appsession_id}/appresults"
+    def find_appresults(self, appsessionid=None):
+        if appsessionid is None:
+            r = self.appsession_id
+        url = f"{v1_api}/appsessions/{appsessionid}/appresults"
         p = {"Limit": 30}
         head = {"Authorization": self.authorise, "User-Agent": "/python-requests/2.22.0"}
         response = requests.get(url, headers=head, params=p, allow_redirects=True)
