@@ -1,0 +1,5 @@
+app_name = "TruSight Tumor 170"
+app_version = "1.0.3"
+v1_api = "https://api.basespace.illumina.com/v1pre3"
+v2_api = "https://api.basespace.illumina.com/v2"
+download_file_extensions = ["vcf", "bam", "bai"] #TODO change from testing actual desired files ,.bam,.bai,.xlsx"

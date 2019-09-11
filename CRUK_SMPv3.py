@@ -7,18 +7,16 @@ from launch_app import LaunchApp
 from poll_appsession_status import PollAppsessionStatus
 from identify_files_to_download import IdentifyFiles
 from download_files import DownloadFiles
+from config import app_name
+from config import app_version
+from config import download_file_extensions
 
 # testing file paths
 ss_location = os.getcwd() # to be commandline arg1- os.path.join() useful
 fastq_location = os.getcwd() # results directory
-config_file_path = "/data/diagnostics/pipelines/CRUK/CRUK-2.0.0/" # TODO import version from illuminaQC
+config_file_path = "/data/diagnostics/pipelines/CRUK/CRUK-2.0.0/" # TODO import version from illuminaQC- cmdline opt (argparse)
 output_directory = os.getcwd() # results directory
-
-download_file_extensions = ["vcf", "bam", "bai"] #TODO change from testing actual desired files ,.bam,.bai,.xlsx"
 download_file_extensions[0] = f".{download_file_extensions[0]}" # TODO make this clearer- adds leading . for 1st extension
-
-app_name = "TruSight Tumor 170"
-app_version = "1.0.3"
 
 def upload_files():
     return None
