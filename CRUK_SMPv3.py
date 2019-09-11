@@ -139,12 +139,12 @@ def main():
 
     # Poll appsession status post launch- runs until appsession is complete
     print(f"Polling status of application")
+    #TODO Add variable appsessionid if downloading without applaunch
     polling = PollAppsessionStatus(authorisation, appsession)
     polling.poll() # Poll status of appsession
     print(f"Appsession complete {appsession}")
 
     # Identify appresults
-    # Add variable appsessionid if downloading without applaunch
     appresults = polling.find_appresults()
 
     # Download files within appresults
