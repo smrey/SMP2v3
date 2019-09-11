@@ -3,8 +3,6 @@ import os
 from config import v1_api
 from config import v2_api
 
-v1_api = "https://api.basespace.illumina.com/v1pre3"
-v2_api = "https://api.basespace.illumina.com/v2"
 
 class FileUpload:
 

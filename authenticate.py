@@ -1,6 +1,7 @@
 # authenticate to obtain access token with write permissions
 import requests
 import json
+import os
 
 from config import v1_api
 from config import v2_api
@@ -13,7 +14,7 @@ def load_config_file(pth):
     :param pth: path to the location of the config file (usually location of the code)
     :return:
     '''
-    with open(pth + "bs.config.json") as config_file:
+    with open(os.path.join(pth + "bs.config.json")) as config_file:
         try:
             config_json = json.load(config_file)
         except json.decoder.JSONDecodeError:
@@ -39,7 +40,7 @@ def get_verification_device_code(client_id, requested_scope, resource):
 
 def main():
     # Load the config file containing user-specific information and obtain the authentication token
-    configs = load_config_file(config_file_pth)
+    configs = load_config_file(config_file_path)
     auth = 'Bearer ' + configs.get("authenticationToken")
 
     # Start here for new authentication workflow
