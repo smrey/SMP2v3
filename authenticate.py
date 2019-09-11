@@ -27,7 +27,7 @@ def get_verification_device_code(client_id, requested_scope, resource):
     if resource != None: # Handle this better in production
         requested_scope = f"{requested_scope} {resource}"
     device_code = None
-    url = "https://api.basespace.illumina.com/v1pre3/oauthv2/deviceauthorization"
+    url = f"{v1_api}/oauthv2/deviceauthorization"
     p = {"client_id": client_id, "response_type": "device_code", "scope": requested_scope}
     response = requests.post(url, params=p)
     if response.status_code != 200:
@@ -46,7 +46,7 @@ def poll_for_access_token(config, device_code):
     token = None
     iterate = True
     while iterate:
-        url = "https://api.basespace.illumina.com/v1pre3/oauthv2/token"
+        url = f"{v1_api}/oauthv2/token"
         p = {"client_id": config.get("clientId"), "client_secret": config.get("clientSecret"),
              "code": device_code, "grant_type":"device"}
         response = requests.post(url, params=p)

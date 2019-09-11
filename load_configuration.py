@@ -1,4 +1,5 @@
 import json
+import os
 
 class LoadConfiguration:
 
@@ -10,7 +11,7 @@ class LoadConfiguration:
         :param pth: path to the location of the config file (usually location of the code)
         :return:
         '''
-        with open(self.path + "bs.config.json") as config_file:
+        with open(os.path.join(self.path, "bs.config.json")) as config_file:
             try:
                 config_json = json.load(config_file)
             except json.decoder.JSONDecodeError:
