@@ -55,6 +55,8 @@ class ParseSampleSheet:
         :param fq_loc:
         :return:
         '''
+        # Create list for error handling when there are no fastqs found for a sample
+        no_fastqs = []
         # Create dictionary to hold information about fastqs
         sample_fastqs_dict = {}
         # Iterate over all sample identifiers
@@ -63,4 +65,8 @@ class ParseSampleSheet:
             # Create list of all fastqs matching sample id- all for upload into <sample>- pre-requisite to app launch
             sample_fastqs_list = (glob.glob(os.path.join(fq_loc, sample) + '*' + 'fastq.gz'))
             sample_fastqs_dict[sample] = sample_fastqs_list
+            if not sample_fastqs_list:
+                no_fastqs.append(sample)
+        if no_fastqs:
+            raise Exception(f"No fastqs found for sample or samples: {no_fastqs}")
         return sample_fastqs_dict
