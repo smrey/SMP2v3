@@ -3,7 +3,6 @@
 
 import pandas as pd
 import glob
-import os
 
 ss_location = "/Users/sararey/Documents/cruk_test_data/SampleSheet.csv" # to be commandline arg1
 # Assumes IlluminaQC script has run- change path if demuxed fastqs will be located elsewhere

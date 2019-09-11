@@ -7,18 +7,16 @@ from launch_app import LaunchApp
 from poll_appsession_status import PollAppsessionStatus
 from identify_files_to_download import IdentifyFiles
 from download_files import DownloadFiles
+from config import app_name
+from config import app_version
+from config import download_file_extensions
 
 # testing file paths
 ss_location = "/Users/sararey/Documents/cruk_test_data/SampleSheet.csv" # to be commandline arg1- os.path.join() useful
 fastq_location = "/Users/sararey/Documents/cruk_test_data/rawFQs/" # results directory
 config_file_path = "/Users/sararey/PycharmProjects/CRUK/" # base pipeline directory
 output_directory = "/Users/sararey/Documents/cruk_test_data/downloaded/" # results directory
-
-download_file_extensions = ["vcf", "bam", "bai"] #TODO change from testing actual desired files ,.bam,.bai,.xlsx"
 download_file_extensions[0] = f".{download_file_extensions[0]}" # TODO make this clearer- add leading . for extension
-
-app_name = "TruSight Tumor 170"
-app_version = "1.0.3"
 
 def upload_files():
     return None

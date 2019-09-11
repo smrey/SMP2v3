@@ -2,8 +2,8 @@
 import requests
 import json
 
-v1_api = "https://api.basespace.illumina.com/v1pre3"
-v2_api = "https://api.basespace.illumina.com/v2"
+from config import v1_api
+from config import v2_api
 
 config_file_pth = "/Users/sararey/PycharmProjects/CRUK/"
 
@@ -32,6 +32,7 @@ def get_verification_device_code(client_id, requested_scope, resource):
     if response.status_code != 200:
         print("error")
         print(response.status_code)
+        print(response.text)
     else:
         files = response.json()
     return files

@@ -3,8 +3,8 @@ import json
 import os
 import datetime
 
-v1_api = "https://api.basespace.illumina.com/v1pre3"
-v2_api = "https://api.basespace.illumina.com/v2"
+from config import v1_api
+from config import v2_api
 
 class LaunchApp:
 
