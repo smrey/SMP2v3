@@ -141,7 +141,7 @@ def main():
     print(f"Polling status of application")
     polling = PollAppsessionStatus(authorisation, appsession)
     polling.poll() # Poll status of appsession
-    print("Appsession complete")
+    print(f"Appsession complete {appsession}")
 
     # Identify appresults
     appresults = polling.find_appresults()
