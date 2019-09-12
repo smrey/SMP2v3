@@ -108,8 +108,6 @@ def main():
         upload_file.finalise_appsession(appsession_id, sample)
 
     # Launch application
-    config_file_pth = "/Users/sararey/PycharmProjects/CRUK/" #tmp variable for testing
-
     launch = LaunchApp(authorisation, project, app_name, app_version)
 
     # Identify biosamples for upload
@@ -125,7 +123,7 @@ def main():
         else:
             raise Exception(f"Could not identify if sample {sample} is a DNA or an RNA sample")
 
-    app_config = launch.generate_app_config(config_file_pth, dna_biosample_ids, rna_biosample_ids)
+    app_config = launch.generate_app_config(config_file_path, dna_biosample_ids, rna_biosample_ids)
 
     # Find specific application ID for application and version number
     launch.get_app_group_id()
