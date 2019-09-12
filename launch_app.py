@@ -15,7 +15,6 @@ class LaunchApp:
         self.app_group_id = None
         self.app_id = None
 
-
     def get_biosamples(self, biosample_name):
         url = v2_api + "/biosamples"
         p = {"biosamplename": biosample_name, "projectid": self.project_id}
@@ -23,7 +22,15 @@ class LaunchApp:
         response = requests.get(url, headers=head, params=p)
         if response.status_code != 200:
             raise Exception(f"BaseSpace error. Error code {response.status_code} message {response.text}")
-        return response.json().get("Items")[0].get("Id") #TODO Make this more robust
+        if len(response.json().get("Items")) > 1:
+            raise Exception(f"Multiple biosamples with name {biosample_name} in project {self.project_id}")
+        if len(response.json().get("Items")) < 1:
+            raise Exception(f"No biosample with name {biosample_name} in project {self.project_id}")
+        try:
+            response.json().get("Items")[0]
+        except:
+            raise Exception(f"Problem with finding biosample data in BaseSpace: {response.json()}")
+        return response.json().get("Items")[0].get("Id")
 
 
     def generate_app_config(self, pth, dna_biosample_ids, rna_biosample_ids):
@@ -104,17 +111,6 @@ class LaunchApp:
         return response
 
 
-    def getter(self):
-        url = v1_api + "/applications/6132126/assets/Forms/17926910/items/20293275/content"
-        head = {"Authorization": self.authorise, "Content-Type": "application/json"}
-        response = requests.get(url, headers=head)
-        if response.status_code != 200:
-            raise Exception(f"BaseSpace error. Error code {response.status_code} message {response.text}")
-        else:
-            print(response.text)
-        return None
-
-
     def get_biosample_info(self, biosample_id):
         url = v2_api + "/biosamples/" + biosample_id + "/libraries"
         p = {"Limit":200, "Offset":0}
@@ -122,7 +118,9 @@ class LaunchApp:
         response = requests.get(url, headers=head, params=p)
         if response.status_code != 200:
             raise Exception(f"BaseSpace error. Error code {response.status_code} message {response.text}")
-        return response.json().get("Items")[0].get("LibraryPrep").get("Id") #TODO Set this line raise exception if >1
+        if len(response.json().get("Items")) > 1:
+            raise Exception(f"More than one library for biosample {biosample_id}")
+        return response.json().get("Items")[0].get("LibraryPrep").get("Id")
 
 
     def launch_application(self, app_conf):
