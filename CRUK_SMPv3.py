@@ -1,4 +1,5 @@
 import os
+import time
 from parse_sample_sheet import ParseSampleSheet
 from load_configuration import LoadConfiguration
 from split_file import SplitFile
@@ -108,9 +109,10 @@ def main():
         upload_file.finalise_appsession(appsession_id, sample)
 
     # Launch application
-    config_file_pth = "/Users/sararey/PycharmProjects/CRUK/" #tmp variable for testing
-
     launch = LaunchApp(authorisation, project, app_name, app_version)
+
+    # Wait to allow biosample indexes to update (5 seconds)
+    time.sleep(5)
 
     # Identify biosamples for upload
     dna_biosample_ids = []
@@ -161,6 +163,8 @@ def main():
 
         find_files = IdentifyFiles(appresult, ",.".join(download_file_extensions), authorisation)
         all_file_metadata = find_files.get_files_from_appresult()
+        if len(all_file_metadata) < 1:
+            print(f"No files of types {download_file_extensions} identified for sample {sample} in appresult {appresult}")
 
         # Iterate over identified files of required file types
         file_download_success = []

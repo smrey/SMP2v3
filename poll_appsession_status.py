@@ -3,15 +3,13 @@ import time
 from config import v1_api
 from config import v2_api
 
-v1_api = "https://api.basespace.illumina.com/v1pre3"
-v2_api = "https://api.basespace.illumina.com/v2"
 
 class PollAppsessionStatus:
 
     def __init__(self, auth, appsession_id):
         self.authorise = auth
         self.appsession_id = appsession_id
-        self.sleep_time = 1800 # Half an hour in seconds #TODO adjust for app runtime
+        self.sleep_time = 900 # 15 minutes in seconds
 
 
     def poll(self):
@@ -34,5 +32,4 @@ class PollAppsessionStatus:
         response = requests.get(url, headers=head, params=p, allow_redirects=True)
         if response.status_code != 200:
             raise Exception(f"BaseSpace error. Error code {response.status_code} message {response.text}")
-        print(response.json().get("Response").get("Items"))
         return {items.get("Name"): items.get("Id") for items in response.json().get("Response").get("Items")}
