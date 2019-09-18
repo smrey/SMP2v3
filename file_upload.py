@@ -83,6 +83,23 @@ class FileUpload:
         return print(f"{response.json().get('Response').get('Name')} set to status {file_status}")
 
 
+    def update_sample_metadata(self, file_to_upload, sample_number, sample_id, r_len, num_reads):
+        sample_metadata = {}
+        file_name = os.path.basename(file_to_upload)
+        url = f"{v1_api}/samples/{sample_id}"
+        data = {"Name": f"{self.project_name}-{file_name}", "SampleId": f"{self.project_name}-{file_name}",
+                "SampleNumber": sample_number, "Read1": r_len, "Read2": r_len, "IsPairedEnd": "true",
+                "NumReadsRaw": num_reads, "NumReadsPF": num_reads}
+        head = {"Content-Type": "application/x-www-form-urlencoded", "Authorization": self.authorise,
+                "User-Agent": "/python-requests/2.22.0"}
+        response = requests.post(url, headers=head, data=data, allow_redirects=True)
+        if response.status_code != 200:
+            raise Exception(f"BaseSpace error. Error code {response.status_code} message {response.text}")
+        sample_metadata["sample_id"] = response.json().get("Response").get("Id")
+        sample_metadata["appsession_id"] = response.json().get("Response").get("AppSession").get("Id")
+        return sample_metadata
+
+
     def finalise_appsession(self, appsession_id, file_name):
         url = f"{v2_api}/appsessions/{appsession_id}"
         d = {"ExecutionStatus": "Complete", "StatusSummary": f"Finished uploading {file_name}"}

@@ -1,5 +1,6 @@
 import os
 import time
+from Bio.SeqIO.QualityIO import FastqGeneralIterator
 from parse_sample_sheet import ParseSampleSheet
 from load_configuration import LoadConfiguration
 from split_file import SplitFile
@@ -69,44 +70,82 @@ def main():
         # Pull out files associated with that particular sample
         fastq_files = all_fastqs.get(sample)
 
-        # For each file associated with that sample
-        for f in fastq_files:
-            # Create a file inside the sample in BaseSpace
-            file_id = upload_file.make_file(f, sample_id)
+        for ind, sample in enumerate(samples_to_upload):
+            read_num = 0  # Cumulative tally
+            len_reads = 0  # Same across all fastqs on the run
+            sample_num = ind + 1
 
-            #Split the file into chunks for upload
-            file_splitting = SplitFile(os.path.join(fastq_location, f))
-            chunks = file_splitting.get_file_chunk_size()
-            file_chunks_created = file_splitting.split_file(chunks)
+            # Create a sample inside the project in BaseSpace
+            sample_metadata = upload_file.make_sample(sample, sample_num)
+            sample_id = sample_metadata.get("sample_id")
+            appsession_id = sample_metadata.get("appsession_id")
 
-            num_chunks_uploaded = 0
-            for i, f_chunk in enumerate(file_chunks_created):
-                # Calculate hash for file chunk
-                md5_b64 = file_splitting.calc_md5_b64(f_chunk)
-                md5_hex = file_splitting.calc_md5_hex(f_chunk)
+            # Pull out files associated with that particular sample
+            fastq_files = all_fastqs.get(sample)
 
-                # Populate sample with file chunks
-                chunk_num = i + 1
-                file_part_uploaded_md5 = upload_file.upload_into_file(f_chunk, file_id, chunk_num, md5_b64)
+            # Pull out lengths of reads from a fastq for this sample (all should be the same)
+            with gzip.open(fastq_files[0], "rt") as fh:
+                fq = FastqGeneralIterator(fh)
+                for fq_id, fq_seq, fq_qual in fq:
+                    # Read length
+                    len_reads = len(fq_seq)
+                    break
 
-                # Check MD5s match before and after upload
-                if md5_hex != file_part_uploaded_md5:
-                    raise Exception(f"MD5s do not match before and after file upload for file chunk {f_chunk}")
+            # For each file associated with that sample
+            for f in fastq_files:
+                num_reads = 0
+                # Identify if read 1 or read 2
+                match_read = f.split("_")
+                read = match_read[:][-2]
+                # Extract required fastq information from R1- assume R2 is the same
+                if read == "R1":
+                    # Open fastq
+                    with gzip.open(f, "rt") as fh_r1:
+                        fq_r1 = FastqGeneralIterator(fh_r1)
+                        for index, (fq_id, fq_seq, fq_qual) in enumerate(fq_r1):
+                            # Number of reads
+                            num_reads = index + 1  # Python is zero indexed
+                # Cumulative tally of read numbers for this sample
+                read_num += num_reads
 
-                # Delete file chunk after upload successful
-                os.remove(f_chunk)
-                num_chunks_uploaded += 1
+                # Create a file inside the sample in BaseSpace
+                file_id = upload_file.make_file(f, sample_id)
 
-            # Check all file parts uploaded
-            if len(file_chunks_created) != num_chunks_uploaded:
-                raise Exception(f"Not all file chunks successfully uploaded for file {f}")
+                # Split the file into chunks for upload
+                file_splitting = SplitFile(os.path.join(fastq_location, f))
+                chunks = file_splitting.get_file_chunk_size()
+                file_chunks_created = file_splitting.split_file(chunks)
 
-            # Set file status to complete
-            upload_file.set_file_upload_status(file_id, "complete")
+                num_chunks_uploaded = 0
+                for i, f_chunk in enumerate(file_chunks_created):
+                    # Calculate hash for file chunk
+                    md5_b64 = file_splitting.calc_md5_b64(f_chunk)
+                    md5_hex = file_splitting.calc_md5_hex(f_chunk)
 
+                    # Populate sample with file chunks
+                    chunk_num = i + 1
+                    file_part_uploaded_md5 = upload_file.upload_into_file(f_chunk, file_id, chunk_num, md5_b64)
 
-        # Mark file upload appsession as complete
-        upload_file.finalise_appsession(appsession_id, sample)
+                    # Check MD5s match before and after upload
+                    if md5_hex != file_part_uploaded_md5:
+                        raise Exception(f"MD5s do not match before and after file upload for file chunk {f_chunk}")
+
+                    # Delete file chunk after upload successful
+                    os.remove(f_chunk)
+                    num_chunks_uploaded += 1
+
+                # Check all file parts uploaded
+                if len(file_chunks_created) != num_chunks_uploaded:
+                    raise Exception(f"Not all file chunks successfully uploaded for file {f}")
+
+                # Set file status to complete
+                upload_file.set_file_upload_status(file_id, "complete")
+
+            # Update sample metadata
+            upload_file.update_sample_metadata(sample, sample_num, sample_id, len_reads, read_num)
+
+            # Mark file upload appsession as complete
+            upload_file.finalise_appsession(appsession_id, sample)
 
     # Launch application
     launch = LaunchApp(authorisation, project, app_name, app_version)
