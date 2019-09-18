@@ -1,4 +1,7 @@
 import os
+import gzip
+import glob
+from Bio.SeqIO.QualityIO import FastqGeneralIterator
 from parse_sample_sheet import ParseSampleSheet
 from load_configuration import LoadConfiguration
 from split_file import SplitFile
@@ -20,8 +23,6 @@ download_file_extensions[0] = f".{download_file_extensions[0]}" # TODO make this
 
 def upload_files():
     return None
-
-
 
 def launch_analysis():
     return None
@@ -58,6 +59,8 @@ def main():
 
     # For each sample on worksheet
     for ind, sample in enumerate(samples_to_upload):
+        read_num = 0 # Cumulative tally
+        len_reads = 0 # Same across all fastqs on the run
         sample_num = ind + 1
 
         # Create a sample inside the project in BaseSpace
@@ -68,8 +71,31 @@ def main():
         # Pull out files associated with that particular sample
         fastq_files = all_fastqs.get(sample)
 
+        # Pull out lengths of reads from a fastq for this sample (all should be the same)
+        with gzip.open(fastq_files[0], "rt") as fh:
+            fq = FastqGeneralIterator(fh)
+            for fq_id, fq_seq, fq_qual in fq:
+                # Read length
+                len_reads = len(fq_seq)
+                break
+
         # For each file associated with that sample
         for f in fastq_files:
+            num_reads = 0
+            # Identify if read 1 or read 2
+            match_read = f.split("_")
+            read = match_read[:][-2]
+            # Extract required fastq information from R1- assume R2 is the same
+            if read == "R1":
+                # Open fastq
+                with gzip.open(f, "rt") as fh_r1:
+                    fq_r1 = FastqGeneralIterator(fh_r1)
+                    for index,(fq_id, fq_seq, fq_qual) in enumerate(fq_r1):
+                        # Number of reads
+                        num_reads = index + 1 # Python is zero indexed
+            # Cumulative tally of read numbers for this sample
+            read_num += num_reads
+
             # Create a file inside the sample in BaseSpace
             file_id = upload_file.make_file(f, sample_id)
 
@@ -103,6 +129,8 @@ def main():
             # Set file status to complete
             upload_file.set_file_upload_status(file_id, "complete")
 
+        # Update sample metadata
+        upload_file.update_sample_metadata(sample, sample_num, sample_id, len_reads, read_num)
 
         # Mark file upload appsession as complete
         upload_file.finalise_appsession(appsession_id, sample)
