@@ -197,7 +197,7 @@ def main():
         print(f"Downloading results for sample {sample}")
 
         # Make sample directory
-        if not os.path.isdir(os.path.join(output_directory, worksheet, sample)):
+        if not os.path.isdir(os.path.join(output_directory, worksheet, sample)): #TODO Change directory name for sample to remove worksheetid
             os.mkdir(os.path.join(output_directory, worksheet, sample))
 
         find_files = IdentifyFiles(appresult, ",.".join(download_file_extensions), authorisation)
