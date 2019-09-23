@@ -163,15 +163,16 @@ def main():
 
         # Identify appresults
         appresults = polling.find_appresults()
-
+        '''
         # Launch SMP2v3 app
         smp_app_config = launch_smp.generate_smp_app_config()
         launch_smp.get_app_group_id()
         launch_smp.get_app_id()
+        '''
 
     '''
 
-    # Download files within appresults
+    # Download files within appresults- SMP2 app
     # Create directory for downloaded files where one does not exist
     if not os.path.isdir(os.path.join(output_directory, worksheet)):
         os.mkdir(os.path.join(output_directory, worksheet))
