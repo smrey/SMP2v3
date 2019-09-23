@@ -63,39 +63,41 @@ def main():
     # Create a project in BaseSpace
     upload_file = FileUpload(authorisation, worksheet)
     project = upload_file.create_basespace_project()
-
+    '''
     # For each sample on worksheet
     for sample_num, sample in enumerate(samples_to_upload, 1):
+        print(f"Uploading sample {sample}")
         read_num = 0 # Cumulative tally
         len_reads = 0 # Same across all fastqs on the run
-        '''
+
         # Create a sample inside the project in BaseSpace
         sample_metadata = upload_file.make_sample(sample, sample_num)
         sample_id = sample_metadata.get("sample_id")
         appsession_id = sample_metadata.get("appsession_id")
-        '''
+
         # Pull out files associated with that particular sample
         fastq_files = all_fastqs.get(sample)
 
         # For each file associated with that sample
         for f in fastq_files:
+            print(f"Uploading fastq {f}")
             # Identify if read 1 or read 2
             match_read = f.split("_")
             read = match_read[:][-2]
             # Extract required fastq information from R1- assume R2 is the same- paired end
             if read == "R1":
-                fq_metadata = upload_file.get_fastq_metadata(f) # Returns (max read length, number of reads in sample)
+                fq_metadata = upload_file.get_fastq_metadata(f) # Returns (max read length, number of reads in fastq)
                 if len_reads < fq_metadata[0]:
                     len_reads = fq_metadata[0]
                 num_reads = fq_metadata[1]
                 # Cumulative tally of read numbers for this sample
                 read_num += num_reads
-        '''
+
             # Create a file inside the sample in BaseSpace
             file_id = upload_file.make_file(f, sample_id)
 
             #Split the file into chunks for upload
-            file_splitting = SplitFile(os.path.join(results_directory, sample, f)) ##TODO Changed
+            file_splitting = SplitFile(os.path.join(results_directory, sample, f))
             chunks = file_splitting.get_file_chunk_size()
             file_chunks_created = file_splitting.split_file(chunks)
 
@@ -129,11 +131,9 @@ def main():
 
         # Mark file upload appsession as complete
         upload_file.finalise_appsession(appsession_id, sample)
-        '''
+    '''
     # Launch application
-    authorisation = "" #TODO TEMP
-    project = "" #TODO TEMP
-    launch = LaunchApp(authorisation, project, app_name, app_version) #TODO Changed
+    launch = LaunchApp(authorisation, project, app_name, app_version)
     launch_smp = LaunchApp(authorisation, project, smp2_app_name, smp2_app_version)
 
     # Launch app for DNA, RNA pairs
