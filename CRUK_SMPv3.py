@@ -1,6 +1,5 @@
 import os
 import gzip
-import glob
 from Bio.SeqIO.QualityIO import FastqGeneralIterator
 from parse_sample_sheet import ParseSampleSheet
 from load_configuration import LoadConfiguration
@@ -16,7 +15,7 @@ from config import download_file_extensions
 
 # testing file paths
 ss_location = "/Users/sararey/Documents/cruk_test_data/SampleSheet.csv" # to be commandline arg1- os.path.join() useful
-fastq_location = "/Users/sararey/Documents/cruk_test_data/rawFQs/" # results directory
+results_directory = "/Users/sararey/Documents/cruk_test_data/rawFQs/" # results directory
 config_file_path = "/Users/sararey/PycharmProjects/CRUK/" # base pipeline directory
 output_directory = "/Users/sararey/Documents/cruk_test_data/downloaded/" # results directory
 download_file_extensions[0] = f".{download_file_extensions[0]}" # TODO make this clearer- add leading . for extension
@@ -51,7 +50,13 @@ def main():
     authorisation = config.get_authentication_token()
 
     # Locate the fastqs associated with all samples
-    all_fastqs = my_sample_sheet.locate_all_fastqs(samples_to_upload, fastq_location)
+    all_fastqs = my_sample_sheet.locate_all_fastqs(samples_to_upload, results_directory)
+
+    # Load and parse out variables from variables files associated with each sample
+    all_variables = my_sample_sheet.load_all_variables(samples_to_upload, results_directory)
+
+    # Pair samples- DNA sample is key, RNA sample to look up- if No RNA sample, it is None
+    sample_pairs = my_sample_sheet.create_sample_pairs(all_variables)
 
     # Create a project in BaseSpace
     upload_file = FileUpload(authorisation, worksheet)
@@ -62,12 +67,12 @@ def main():
         read_num = 0 # Cumulative tally
         len_reads = 0 # Same across all fastqs on the run
         sample_num = ind + 1
-
+        '''
         # Create a sample inside the project in BaseSpace
         sample_metadata = upload_file.make_sample(sample, sample_num)
         sample_id = sample_metadata.get("sample_id")
         appsession_id = sample_metadata.get("appsession_id")
-
+        '''
         # Pull out files associated with that particular sample
         fastq_files = all_fastqs.get(sample)
 
@@ -95,12 +100,12 @@ def main():
                         num_reads = index + 1 # Python is zero indexed
             # Cumulative tally of read numbers for this sample
             read_num += num_reads
-
+            '''
             # Create a file inside the sample in BaseSpace
             file_id = upload_file.make_file(f, sample_id)
 
             #Split the file into chunks for upload
-            file_splitting = SplitFile(os.path.join(fastq_location, f))
+            file_splitting = SplitFile(os.path.join(results_directory, sample, f)) ##TODO Changed
             chunks = file_splitting.get_file_chunk_size()
             file_chunks_created = file_splitting.split_file(chunks)
 
@@ -128,15 +133,15 @@ def main():
 
             # Set file status to complete
             upload_file.set_file_upload_status(file_id, "complete")
-
+        
         # Update sample metadata
         upload_file.update_sample_metadata(sample, sample_num, sample_id, len_reads, read_num)
 
         # Mark file upload appsession as complete
         upload_file.finalise_appsession(appsession_id, sample)
-
+        '''
     # Launch application
-    launch = LaunchApp(authorisation, project, app_name, app_version)
+    #launch = LaunchApp(authorisation, project, app_name, app_version) #TODO Changed
 
     # Identify biosamples for upload
     dna_biosample_ids = []
@@ -199,6 +204,6 @@ def main():
             print(f"Files may be missing for sample {sample}, appresult {appresult}. Please check.")
 
     print("Files downloaded for all samples and appresults")
-
+    '''
 if __name__ == '__main__':
         main()
