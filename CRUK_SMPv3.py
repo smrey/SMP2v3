@@ -11,6 +11,8 @@ from identify_files_to_download import IdentifyFiles
 from download_files import DownloadFiles
 from config import app_name
 from config import app_version
+from config import smp2_app_name
+from config import smp2_app_version
 from config import download_file_extensions
 
 # testing file paths
@@ -132,38 +134,42 @@ def main():
     authorisation = "" #TODO TEMP
     project = "" #TODO TEMP
     launch = LaunchApp(authorisation, project, app_name, app_version) #TODO Changed
+    launch_smp = LaunchApp(authorisation, project, smp2_app_name, smp2_app_version)
 
-    # Identify biosamples for upload
-    dna_biosample_ids = []
-    rna_biosample_ids = []
-    for sample in samples_to_upload:
-        biosample_id = launch.get_biosamples(f"{worksheet}-{sample}")
-        #TODO logic to identify and separate DNA and RNA samples- finalise
-        if sample.split("_")[-1] == "RNA":
-            rna_biosample_ids.append(biosample_id)
-        elif sample.split("_")[-1] == "DNA":
-            dna_biosample_ids.append(biosample_id)
-        else:
-            raise Exception(f"Could not identify if sample {sample} is a DNA or an RNA sample")
+    # Launch app for DNA, RNA pairs
+    appsession_list = []
+    for dna_sample in sample_pairs.keys():
+        # Identify biosamples for upload
+        dna_biosample_id = launch.get_biosamples(f"{worksheet}-{dna_sample}")
+        rna_sample = sample_pairs.get(dna_sample)
+        rna_biosample_id = launch.get_biosamples(f"{worksheet}-{rna_sample}")
+
+        app_config = launch.generate_app_config(config_file_path, dna_biosample_id, rna_biosample_id)
+
+        # Find specific application ID for application and version number
+        launch.get_app_group_id()
+        launch.get_app_id()
+
+        # Launch application for DNA and RNA pair
+        print(f"Launching {app_name} {app_version} for {dna_sample} and {rna_sample}")
+        appsession_list.append(launch.launch_application(app_config))
+        #TODO write appsession out to file to help with resuming?
+
+    # Poll appsession status post launch- polling runs until appsession is complete
+    for appsession in appsession_list:
+        print(f"Polling status of application, appsession {appsession}")
+        polling = PollAppsessionStatus(authorisation, appsession)
+        print(polling.poll()) # Poll status of appsession
+
+        # Identify appresults
+        appresults = polling.find_appresults()
+
+        # Launch SMP2v3 app
+        smp_app_config = launch_smp.generate_smp_app_config()
+        launch_smp.get_app_group_id()
+        launch_smp.get_app_id()
+
     '''
-    app_config = launch.generate_app_config(config_file_path, dna_biosample_ids, rna_biosample_ids)
-
-    # Find specific application ID for application and version number
-    launch.get_app_group_id()
-    launch.get_app_id()
-
-    # Launch application for all DNA and RNA samples
-    print(f"Launching {app_name} {app_version}")
-    appsession = launch.launch_application(app_config)
-
-    # Poll appsession status post launch- runs until appsession is complete
-    print(f"Polling status of application")
-    polling = PollAppsessionStatus(authorisation, appsession)
-    polling.poll() # Poll status of appsession
-    print("Appsession complete")
-
-    # Identify appresults
-    appresults = polling.find_appresults()
 
     # Download files within appresults
     # Create directory for downloaded files where one does not exist

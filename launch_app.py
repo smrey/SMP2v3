@@ -54,6 +54,11 @@ class LaunchApp:
         return app_config
 
 
+    def generate_smp_app_config(self):
+        #TODO
+        return None
+
+
     def get_app_group_id(self):
         url = v1_api + "/applications"
         p = {"Limit":200, "Offset":0}
