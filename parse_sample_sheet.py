@@ -61,7 +61,7 @@ class ParseSampleSheet:
         for index_sample in samples.iteritems():
             sample = index_sample[1] # row labels not required, data in first column of series
             # Create list of all fastqs matching sample id- all for upload into <sample>- pre-requisite to app launch
-            sample_fastqs_list = (glob.glob(os.path.join(results_dir, sample, sample) + '*' + 'fastq.gz')) #TODO Changed
+            sample_fastqs_list = (glob.glob(os.path.join(results_dir, sample, sample) + '*' + 'fastq.gz'))
             sample_fastqs_dict[sample] = sample_fastqs_list
         return sample_fastqs_dict
 
@@ -90,7 +90,6 @@ class ParseSampleSheet:
         rna_dict = {}
         for k, v in variables.items():
             if v.get("sampleType") == "DNA":
-                print(k)
                 dna_dict[v.get("pairs")] = v.get("sampleId")
             elif v.get("sampleType") == "RNA":
                 rna_dict[v.get("pairs")] = v.get("sampleId")

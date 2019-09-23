@@ -63,10 +63,9 @@ def main():
     project = upload_file.create_basespace_project()
 
     # For each sample on worksheet
-    for ind, sample in enumerate(samples_to_upload):
+    for sample_num, sample in enumerate(samples_to_upload, 1):
         read_num = 0 # Cumulative tally
         len_reads = 0 # Same across all fastqs on the run
-        sample_num = ind + 1
         '''
         # Create a sample inside the project in BaseSpace
         sample_metadata = upload_file.make_sample(sample, sample_num)
@@ -76,31 +75,20 @@ def main():
         # Pull out files associated with that particular sample
         fastq_files = all_fastqs.get(sample)
 
-        # Pull out lengths of reads from a fastq for this sample (all should be the same)
-        with gzip.open(fastq_files[0], "rt") as fh:
-            fq = FastqGeneralIterator(fh)
-            for fq_id, fq_seq, fq_qual in fq:
-                # Read length
-                len_reads = len(fq_seq)
-                break
-
         # For each file associated with that sample
         for f in fastq_files:
-            num_reads = 0
             # Identify if read 1 or read 2
             match_read = f.split("_")
             read = match_read[:][-2]
-            # Extract required fastq information from R1- assume R2 is the same
+            # Extract required fastq information from R1- assume R2 is the same- paired end
             if read == "R1":
-                # Open fastq
-                with gzip.open(f, "rt") as fh_r1:
-                    fq_r1 = FastqGeneralIterator(fh_r1)
-                    for index,(fq_id, fq_seq, fq_qual) in enumerate(fq_r1):
-                        # Number of reads
-                        num_reads = index + 1 # Python is zero indexed
-            # Cumulative tally of read numbers for this sample
-            read_num += num_reads
-            '''
+                fq_metadata = upload_file.get_fastq_metadata(f) # Returns (max read length, number of reads in sample)
+                if len_reads < fq_metadata[0]:
+                    len_reads = fq_metadata[0]
+                num_reads = fq_metadata[1]
+                # Cumulative tally of read numbers for this sample
+                read_num += num_reads
+        '''
             # Create a file inside the sample in BaseSpace
             file_id = upload_file.make_file(f, sample_id)
 
@@ -133,7 +121,7 @@ def main():
 
             # Set file status to complete
             upload_file.set_file_upload_status(file_id, "complete")
-        
+
         # Update sample metadata
         upload_file.update_sample_metadata(sample, sample_num, sample_id, len_reads, read_num)
 
@@ -141,7 +129,9 @@ def main():
         upload_file.finalise_appsession(appsession_id, sample)
         '''
     # Launch application
-    #launch = LaunchApp(authorisation, project, app_name, app_version) #TODO Changed
+    authorisation = "" #TODO TEMP
+    project = "" #TODO TEMP
+    launch = LaunchApp(authorisation, project, app_name, app_version) #TODO Changed
 
     # Identify biosamples for upload
     dna_biosample_ids = []
@@ -155,7 +145,7 @@ def main():
             dna_biosample_ids.append(biosample_id)
         else:
             raise Exception(f"Could not identify if sample {sample} is a DNA or an RNA sample")
-
+    '''
     app_config = launch.generate_app_config(config_file_path, dna_biosample_ids, rna_biosample_ids)
 
     # Find specific application ID for application and version number

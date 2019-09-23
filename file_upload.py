@@ -1,5 +1,7 @@
 import requests
 import os
+import gzip
+from Bio.SeqIO.QualityIO import FastqGeneralIterator
 
 from config import v1_api
 from config import v2_api
@@ -48,6 +50,31 @@ class FileUpload:
         sample_metadata["sample_id"] = response.json().get("Response").get("Id")
         sample_metadata["appsession_id"] = response.json().get("Response").get("AppSession").get("Id")
         return sample_metadata
+
+
+    def get_read_length_one_fq(self, fq_file):
+        with gzip.open(fq_file, "rt") as fh:
+            fq = FastqGeneralIterator(fh)
+            for fq_id, fq_seq, fq_qual in fq:
+                # Read length
+                len_reads = len(fq_seq)
+                return len_reads
+
+
+    def get_fastq_metadata(self, fastq):
+        num_reads = 0
+        len_reads = 0
+        # Open fastq
+        with gzip.open(fastq, "rt") as fh_r1:
+            fq_r1 = FastqGeneralIterator(fh_r1)
+            for index,(fq_id, fq_seq, fq_qual) in enumerate(fq_r1, 1): # Python is zero indexed
+                # Read length
+                if len(fq_seq) > len_reads:
+                    len_reads = len(fq_seq)
+                # Number of reads
+                num_reads = index
+        return (len_reads, num_reads)
+
 
 
     def make_file(self, file_to_upload, sample_id):
