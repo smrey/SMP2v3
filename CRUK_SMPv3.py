@@ -1,5 +1,6 @@
 import os
 import time
+import gzip
 from Bio.SeqIO.QualityIO import FastqGeneralIterator
 from parse_sample_sheet import ParseSampleSheet
 from load_configuration import LoadConfiguration
