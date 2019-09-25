@@ -31,5 +31,4 @@ class PollAppsessionStatus:
         response = requests.get(url, headers=head, allow_redirects=True)
         if response.status_code != 200:
             raise Exception(f"BaseSpace error. Error code {response.status_code} message {response.text}")
-        print(response.json().get("Response").get("Items"))
         return {items.get("Name"): items.get("Id") for items in response.json().get("Response").get("Items")}
