@@ -20,14 +20,14 @@ class PollAppsessionStatus:
             raise Exception(f"BaseSpace error. Error code {response.status_code} message {response.text}")
         else:
             if response.json().get("ExecutionStatus") == "Complete":
-                return "All appsessions complete"
+                return f"Appsession {self.appsession_id} complete"
             time.sleep(self.sleep_time)
         return self.poll()
 
 
     def find_appresults(self):
         url = f"{v1_api}/appsessions/{self.appsession_id}/appresults"
-        p = {"Limit": 30}
+        p = {"Limit": 40}
         head = {"Authorization": self.authorise, "User-Agent": "/python-requests/2.22.0"}
         response = requests.get(url, headers=head, params=p, allow_redirects=True)
         if response.status_code != 200:

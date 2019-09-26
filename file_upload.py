@@ -1,5 +1,7 @@
 import requests
 import os
+import gzip
+from Bio.SeqIO.QualityIO import FastqGeneralIterator
 from config import v1_api
 from config import v2_api
 
@@ -50,6 +52,30 @@ class FileUpload:
         return sample_metadata
 
 
+    def get_read_length_one_fq(self, fq_file):
+        with gzip.open(fq_file, "rt") as fh:
+            fq = FastqGeneralIterator(fh)
+            for fq_id, fq_seq, fq_qual in fq:
+                # Read length
+                len_reads = len(fq_seq)
+                return len_reads
+
+
+    def get_fastq_metadata(self, fastq):
+        num_reads = 0
+        len_reads = 0
+        # Open fastq
+        with gzip.open(fastq, "rt") as fh_r1:
+            fq_r1 = FastqGeneralIterator(fh_r1)
+            for index, (fq_id, fq_seq, fq_qual) in enumerate(fq_r1, 1):  # Python is zero indexed
+                # Read length
+                if len(fq_seq) > len_reads:
+                    len_reads = len(fq_seq)
+                # Number of reads
+                num_reads = index
+        return (len_reads, num_reads)
+
+
     def make_file(self, file_to_upload, sample_id):
         file_name = os.path.basename(file_to_upload)
         url = f"{v1_api}/samples/{sample_id}/files"
@@ -80,7 +106,7 @@ class FileUpload:
         response = requests.post(url, headers=head, params=p, allow_redirects=True)
         if response.status_code != 201:
             raise Exception(f"BaseSpace error. Error code {response.status_code} message {response.text}")
-        return print(f"{response.json().get('Response').get('Name')} set to status {file_status}")
+        return f"{response.json().get('Response').get('Name')} set to status {file_status}"
 
 
     def update_sample_metadata(self, file_to_upload, sample_number, sample_id, r_len, num_reads):

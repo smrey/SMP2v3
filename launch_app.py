@@ -33,16 +33,12 @@ class LaunchApp:
         return response.json().get("Items")[0].get("Id")
 
 
-    def generate_app_config(self, pth, dna_biosample_ids, rna_biosample_ids):
+    def generate_app_config(self, pth, dna_biosample_id, rna_biosample_id):
         # Generate list of biosamples in correct format for application launch
-        dna_list = []
-        for dna_biosample_id in dna_biosample_ids:
-            dna_libraryprep_id = self.get_biosample_info(dna_biosample_id)
-            dna_list.append(f"biosamples/{dna_biosample_id}/librarypreps/{dna_libraryprep_id}")
-        rna_list = []
-        for rna_biosample_id in rna_biosample_ids:
-            rna_libraryprep_id = self.get_biosample_info(rna_biosample_id)
-            rna_list.append(f"biosamples/{rna_biosample_id}/librarypreps/{rna_libraryprep_id}")
+        dna_libraryprep_id = self.get_biosample_info(dna_biosample_id)
+        dna_config = f"biosamples/{dna_biosample_id}/librarypreps/{dna_libraryprep_id}"
+        rna_libraryprep_id = self.get_biosample_info(rna_biosample_id)
+        rna_config = f"biosamples/{rna_biosample_id}/librarypreps/{rna_libraryprep_id}"
         # Obtain date and time
         current_time = datetime.datetime.now()
         # remove seconds from date and time and create string
@@ -51,13 +47,18 @@ class LaunchApp:
             try:
                 app_config = json.load(app_config_file)
                 input = app_config.get("InputParameters")
-                input["dna-sample-id"] = dna_list
+                input["dna-sample-id"] = dna_config
                 input["project-id"] = f"projects/{self.project_id}"
-                input["rna-sample-id"] = rna_list
+                input["rna-sample-id"] = rna_config
                 app_config["Name"] = f"TruSight Tumour 170 {date_time}"
             except json.decoder.JSONDecodeError:
                 raise Exception("Config file is incorrectly formatted and does not contain valid json")
         return app_config
+
+
+    def generate_smp_app_config(self):
+        #TODO
+        return None
 
 
     def get_app_group_id(self):

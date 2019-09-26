@@ -49,7 +49,7 @@ class ParseSampleSheet:
         return worksheet_id
 
 
-    def locate_all_fastqs(self, samples, fq_loc):
+    def locate_all_fastqs(self, samples, results_dir):
         '''
         :param ss_df: the sample-related information from the Illumina sample sheet as a data frame
         :param fq_loc:
@@ -63,10 +63,45 @@ class ParseSampleSheet:
         for index_sample in samples.iteritems():
             sample = index_sample[1] # row labels not required, data in first column of series
             # Create list of all fastqs matching sample id- all for upload into <sample>- pre-requisite to app launch
-            sample_fastqs_list = (glob.glob(os.path.join(fq_loc, sample) + '*' + 'fastq.gz'))
+            sample_fastqs_list = (glob.glob(os.path.join(results_dir, sample, sample) + '*' + 'fastq.gz'))
             sample_fastqs_dict[sample] = sample_fastqs_list
             if not sample_fastqs_list:
                 no_fastqs.append(sample)
         if no_fastqs:
             raise Exception(f"No fastqs found for sample or samples: {no_fastqs}")
         return sample_fastqs_dict
+
+
+    def load_all_variables(self, samples, results_dir):
+        # Create dictionary to hold variables data
+        sample_variables_dict = {}
+        for index_sample in samples.iteritems():
+            sample = index_sample[1]  # row labels not required, data in first column of series
+            # Create dictionary to hold key-value pairs
+            variables_dict = {}
+            with open(os.path.join(results_dir, sample, sample) + ".variables") as vf:
+                for line in vf:
+                    split_line = line.split("=")
+                    try:
+                        variables_dict[split_line[0]] = split_line[1].rstrip()
+                    except IndexError:
+                        # Skip lines where there is no '='
+                        pass
+                sample_variables_dict[sample] = variables_dict
+        return sample_variables_dict
+
+
+    def create_sample_pairs(self, variables):
+        dna_dict = {}
+        rna_dict = {}
+        for k, v in variables.items():
+            if v.get("sampleType") == "DNA":
+                dna_dict[v.get("pairs")] = v.get("sampleId")
+            elif v.get("sampleType") == "RNA":
+                rna_dict[v.get("pairs")] = v.get("sampleId")
+        pairs_dict = {}
+        for patient_id in dna_dict.keys():
+            pairs_dict[dna_dict.get(patient_id)] = rna_dict.get(patient_id, None)
+        return pairs_dict
+
+
