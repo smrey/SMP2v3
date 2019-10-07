@@ -100,8 +100,9 @@ class ParseSampleSheet:
             elif v.get("sampleType") == "RNA":
                 rna_dict[v.get("pairs")] = v.get("sampleId")
         pairs_dict = {}
-        for patient_id in dna_dict.keys():
-            pairs_dict[dna_dict.get(patient_id)] = rna_dict.get(patient_id, None)
+        for patient_name in dna_dict.keys():
+            if not patient_name == "null":
+                pairs_dict[dna_dict.get(patient_name)] = rna_dict.get(patient_name, None)
         return pairs_dict
 
 
