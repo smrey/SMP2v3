@@ -37,7 +37,7 @@ def download_files():
 
 
 def main():
-
+    '''
     # Parse sample sheet to extract relevant sample information
     my_sample_sheet = ParseSampleSheet(ss_location)
     my_sample_sheet.read_in_sample_sheet()
@@ -150,16 +150,22 @@ def main():
     for appsession in appsession_list:
         print(f"Polling status of application, appsession {appsession}")
         polling = PollAppsessionStatus(authorisation, appsession)
-        print(polling.poll())  # Poll status of appsession
+        print(polling.poll())  # Poll status of appsession #TODO add something to identify and print out for Aborted samples
 
         # Identify appresults
         appresults = polling.find_appresults()
         '''
+    '''
         # Launch SMP2v3 app
         smp_app_config = launch_smp.generate_smp_app_config()
         launch_smp.get_app_group_id()
         launch_smp.get_app_id()
         '''
+
+    #TODO temp testing- note this needs to be indented as app launch is per TST170 app completion?- figure out appropriate way
+    launch_smp = LaunchApp("stuff", "project", smp2_app_name, smp2_app_version)
+    # Get dataset ids
+    print(launch_smp.generate_smp_app_config("11111", "22222"))
 
     '''
     # Download files within appresults- SMP2 app

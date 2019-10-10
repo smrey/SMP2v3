@@ -1,0 +1,12 @@
+{
+  "AutoStart":true,
+  "InputParameters":
+    {
+    "app-session-name":"Example [LocalDateTime]",
+    "dna-sample-id":["biosamples//librarypreps/", ""],
+    "project-id":"projects/",
+    "rna-sample-id":["biosamples//librarypreps/", ""]
+    },
+    "Name":"TruSight Tumor 170",
+    "StatusSummary":"CRUK Launch"
+  }
