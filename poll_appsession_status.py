@@ -20,7 +20,9 @@ class PollAppsessionStatus:
             raise Exception(f"BaseSpace error. Error code {response.status_code} message {response.text}")
         else:
             if response.json().get("ExecutionStatus") == "Complete":
-                return f"Appsession {self.appsession_id} complete"
+                return "Complete"
+            elif response.json().get("ExecutionStatus") == "Aborted":
+                return "Fail"
             time.sleep(self.sleep_time)
         return self.poll()
 

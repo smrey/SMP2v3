@@ -144,19 +144,26 @@ def main():
         # Launch application for DNA and RNA pair
         print(f"Launching {app_name} {app_version} for {dna_sample} and {rna_sample}")
         appsession_list.append(launch.launch_application(app_config))
-        # TODO write appsession out to file to help with resuming?
+        # TODO write appsession out to file to help with resuming- dict=write out samples too for printing out fails?
 
     # Poll appsession status post launch- polling runs until appsession is complete
     for appsession in appsession_list:
         print(f"Polling status of application, appsession {appsession}")
         polling = PollAppsessionStatus(authorisation, appsession)
-        print(polling.poll())  # Poll status of appsession #TODO add something to identify and print out for Aborted samples
+        poll_result = polling.poll()  # Poll status of appsession #TODO add something to identify and print out for Aborted samples
+        print(f"Appsession {appsession} is status {poll_result}")
+
+        if poll_result == "Fail":
+            print(f"TST170 app for samples {dna_sample- lookup in dict} and {rna_sample-lookup in dict}" has failed to
+                    complete. Investigate further through the BaseSpace website.)
+            # Move on to the next pair's appsession
+            continue
 
         # Identify appresults
         appresults = polling.find_appresults()
         '''
     '''
-        # Launch SMP2v3 app
+        # Launch SMP2v3 app as each pair completes analysis with the TST170 app
         smp_app_config = launch_smp.generate_smp_app_config()
         launch_smp.get_app_group_id()
         launch_smp.get_app_id()
@@ -168,6 +175,7 @@ def main():
     print(launch_smp.generate_smp_app_config("11111", "22222"))
 
     '''
+    #TODO These should be once the status of all appsessions are known
     # Download files within appresults- SMP2 app
     # Create directory for downloaded files where one does not exist
     if not os.path.isdir(os.path.join(output_directory, worksheet)):
