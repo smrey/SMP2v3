@@ -37,7 +37,6 @@ def download_files():
 
 
 def main():
-    '''
     # Parse sample sheet to extract relevant sample information
     my_sample_sheet = ParseSampleSheet(ss_location)
     my_sample_sheet.read_in_sample_sheet()
@@ -60,6 +59,7 @@ def main():
 
     # Pair samples- DNA sample is key, RNA sample to look up- if No RNA sample, it is None
     sample_pairs = my_sample_sheet.create_sample_pairs(all_variables)
+    #TODO Write out sample pairs to a file for checking
 
     # Create a project in BaseSpace
     upload_file = FileUpload(authorisation, worksheet)
@@ -121,13 +121,15 @@ def main():
         upload_file.finalise_appsession(appsession_id, sample)
 
     # Launch application
-    launch = LaunchApp(authorisation, project, app_name, app_version)
-    launch_smp = LaunchApp(authorisation, project, smp2_app_name, smp2_app_version)
-
     # Wait to allow biosample indexes to update (5 seconds)
     time.sleep(5)
 
-    # Launch app for DNA, RNA pairs
+    # Create launch app object for TST 170
+    launch = LaunchApp(authorisation, project, app_name, app_version)
+    launch_smp = LaunchApp(authorisation, project, smp2_app_name, smp2_app_version)
+
+    # Launch TST170 app for DNA, RNA pairs
+    tst_170 = {}
     appsession_list = []
     for dna_sample in sample_pairs.keys():
         # Identify biosamples for upload
@@ -135,46 +137,77 @@ def main():
         rna_sample = sample_pairs.get(dna_sample)
         rna_biosample_id = launch.get_biosamples(f"{worksheet}-{rna_sample}")
 
+        # Create configuration for TST 170 app launch
         app_config = launch.generate_app_config(config_file_path, dna_biosample_id, rna_biosample_id)
 
-        # Find specific application ID for application and version number
+        # Find specific application ID for application and version number of TST 170 app
         launch.get_app_group_id()
         launch.get_app_id()
 
-        # Launch application for DNA and RNA pair
+        # Launch TST 170 application for DNA and RNA pair
         print(f"Launching {app_name} {app_version} for {dna_sample} and {rna_sample}")
-        appsession_list.append(launch.launch_application(app_config))
-        # TODO write appsession out to file to help with resuming- dict=write out samples too for printing out fails?
+        appsession = launch.launch_application(app_config)
+        # TODO write info in this dictionary out to file to help with resuming
+        tst_170[dna_sample] = {"appsession": appsession, "dna_biosample_id": dna_biosample_id,
+                                "rna_biosample_id": rna_biosample_id}
 
-    # Poll appsession status post launch- polling runs until appsession is complete
-    for appsession in appsession_list:
-        print(f"Polling status of application, appsession {appsession}")
+    # Poll appsession status of launched TST 170 app- polling runs until appsession is complete then launch SMP2 v3 app
+    smp_appresults = {}
+    for dna_sample, tst_values in tst_170.items():
+        rna_sample = sample_pairs.get(dna_sample)
+        appsession = tst_values.get("appsession")
+        print(f"Polling status of TST 170 application, appsession {appsession}")
         polling = PollAppsessionStatus(authorisation, appsession)
-        poll_result = polling.poll()  # Poll status of appsession #TODO add something to identify and print out for Aborted samples
-        print(f"Appsession {appsession} is status {poll_result}")
+        poll_result = polling.poll()  # Poll status of appsession
+        print(f" TST 170 appsession {appsession} for samples {dna_sample} and {rna_sample} has finished with status {poll_result}")
 
         if poll_result == "Fail":
-            print(f"TST170 app for samples {dna_sample- lookup in dict} and {rna_sample-lookup in dict}" has failed to
-                    complete. Investigate further through the BaseSpace website.)
+            print(f"TST170 app for samples {dna_sample} and {rna_sample} has failed to"
+                    f"complete. Investigate further through the BaseSpace website.")
             # Move on to the next pair's appsession
             continue
 
-        # Identify appresults
-        appresults = polling.find_appresults()
-        '''
-    '''
         # Launch SMP2v3 app as each pair completes analysis with the TST170 app
-        smp_app_config = launch_smp.generate_smp_app_config()
+        # Find specific application ID for application and version number of SMP2 app
         launch_smp.get_app_group_id()
         launch_smp.get_app_id()
-        '''
 
-    #TODO temp testing- note this needs to be indented as app launch is per TST170 app completion?- figure out appropriate way
-    launch_smp = LaunchApp("stuff", "project", smp2_app_name, smp2_app_version)
-    # Get dataset ids
-    print(launch_smp.generate_smp_app_config("11111", "22222"))
+        # Create launch app object for SMP2 v3
+        launch_smp = LaunchApp(authorisation, project, smp2_app_name, smp2_app_version)
+        # Get dataset ids using TST 170 appsession id and nucleotide biosample id
+        dna_dataset_id = launch_smp.get_datasets(appsession, tst_values.get("dna_biosample_id"))
+        rna_dataset_id = launch_smp.get_datasets(appsession, tst_values.get("rna_biosample_id"))
+        # Create configuration for SMP2 v3 app launch
+        smp_app_config = launch_smp.generate_smp_app_config(dna_dataset_id, rna_dataset_id)
 
-    '''
+        # Launch SMP2 v3
+        print(f"Launching {app_name} {app_version} for {dna_sample} and {rna_sample}")
+        smp_appsession = launch_smp.launch_application(smp_app_config)
+        smp_appresults[dna_sample] = smp_appsession
+
+    # Poll appsession status of launched SMP2 v3 app- polling runs until appsession is complete then download files
+    appresults = {}
+    for dna_sample, smp_appsession in smp_appresults.items():
+        rna_sample = sample_pairs.get(dna_sample)
+        print(f"Polling status of SMP2 v3 application, appsession {smp_appsession}")
+        polling = PollAppsessionStatus(authorisation, smp_appsession)
+        poll_result = polling.poll()  # Poll status of appsession
+        print(f" TST 170 appsession {smp_appsession} for sample {dna_sample} and {rna_sample} has finished with status {poll_result}")
+
+        if poll_result == "Fail":
+            print(f"SMP2 v3 app for samples {dna_sample} and {rna_sample} has failed to "
+                    f"complete. Investigate further through the BaseSpace website.")
+            # Overwrite files to download to readme to aid with troubleshooting
+            # TODO Download file here- call function once abstracted
+            #download_file_extensions = [".log"]
+            # Move on to the next pair's appsession
+            continue
+
+        # Appresults identifier required for file download- TODO Where does this belong?- changed to match several independent launches
+        appresults[dna_sample] = polling.find_appresults()
+        print(appresults) # TODO Check what is going on here- how many results get returned and are they list or string
+
+
     #TODO These should be once the status of all appsessions are known
     # Download files within appresults- SMP2 app
     # Create directory for downloaded files where one does not exist
@@ -198,7 +231,7 @@ def main():
         else:
             print(f"Files may be missing for sample {sample}, appresult {appresult}. Please check.")
 
- print("Files downloaded for all samples and appresults")
-'''
+    print("Files downloaded for all samples and appresults")
+
 if __name__ == '__main__':
      main()

@@ -131,6 +131,26 @@ class LaunchApp:
             raise Exception(f"More than one library for biosample {biosample_id}")
         return response.json().get("Items")[0].get("LibraryPrep").get("Id")
 
+    def get_datasets(self, appsession_id, biosample_id):
+        dataset_id = ""
+        url = v2_api + "/datasets"
+        p = {"limit": "50", "inputbiosamples": biosample_id, "datasettypes": "common.files",
+             "include": "AppSessionRoot"}
+        head = {"Authorization": self.authorise, "Content-Type": "application/json"}
+        response = requests.get(url, headers=head, params=p)
+        if response.status_code != 200:
+            raise Exception(f"BaseSpace error. Error code {response.status_code} message {response.text}")
+        else:
+            if len(response.json().get("Items")) > 1:
+                for dataset in (response.json().get("Items")):
+                    if dataset.get("AppSession").get("AppSessionRoot").get("Id") == appsession_id:
+                        dataset_id = dataset.get("Id")
+                    else:
+                        raise Exception(f"Could not determine dataset id required to launch SMP2 app.")
+            else:
+                dataset_id = response.json().get("Items")[0].get("Id")
+        return dataset_id
+
     def launch_application(self, app_conf):
         url = v2_api + "/applications/" + self.app_id + "/launch/"
         d = json.dumps(app_conf)
