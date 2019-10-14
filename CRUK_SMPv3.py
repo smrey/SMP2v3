@@ -23,17 +23,38 @@ config_file_path = "/data/diagnostics/pipelines/CRUK/CRUK-2.0.0/" # TODO import 
 output_directory = os.getcwd() # results directory
 download_file_extensions[0] = f".{download_file_extensions[0]}" # TODO make this clearer- adds leading . for 1st extension
 
+
 def upload_files():
     return None
+
 
 def launch_analysis():
     return None
 
+
 def analysis_status():
     return None
 
-def download_files():
-    return None
+
+def download_files(authorisation, worksheet_id, sample, appresult, download_file_extensions=download_file_extensions):
+    # Create directory for downloaded files where one does not exist
+    if not os.path.isdir(os.path.join(output_directory, worksheet_id)):
+        os.mkdir(os.path.join(output_directory, worksheet_id))
+    # Make sample directory
+    if not os.path.isdir(os.path.join(output_directory, worksheet_id, sample)):
+        os.mkdir(os.path.join(output_directory, worksheet_id, sample))
+    find_files = IdentifyFiles(appresult, ",.".join(download_file_extensions), authorisation)
+    all_file_metadata = find_files.get_files_from_appresult()
+    # Iterate over identified files of required file types
+    file_download_success = []
+    for fl in all_file_metadata:
+        file_download = DownloadFiles(fl, os.path.join(output_directory, worksheet_id, sample), authorisation)
+        file_download_success.append(file_download.download_files())
+    if len(all_file_metadata) == len(file_download_success):
+        file_dl_result = f"All files successfully downloaded for sample {sample}, appresult {appresult}"
+    else:
+        file_dl_result = f"Files may be missing for sample {sample}, appresult {appresult}. Please check."
+    return file_dl_result
 
 
 def main():
@@ -200,6 +221,7 @@ def main():
             # Overwrite files to download to readme to aid with troubleshooting
             # TODO Download file here- call function once abstracted
             #download_file_extensions = [".log"]
+            print(download_files(authorisation, worksheet, dna_sample, polling.find_appresults(), [".log"])) #TODO see below for how this is returned
             # Move on to the next pair's appsession
             continue
 
@@ -207,30 +229,11 @@ def main():
         appresults[dna_sample] = polling.find_appresults()
         print(appresults) # TODO Check what is going on here- how many results get returned and are they list or string
 
-
-    #TODO These should be once the status of all appsessions are known
-    # Download files within appresults- SMP2 app
-    # Create directory for downloaded files where one does not exist
-    if not os.path.isdir(os.path.join(output_directory, worksheet)):
-        os.mkdir(os.path.join(output_directory, worksheet))
-    # Iterate over all appresults- one per sample
-    for sample, appresult in appresults.items():
-        print(f"Downloading results for sample {sample}")
-        # Make sample directory
-        if not os.path.isdir(os.path.join(output_directory, worksheet, sample)):
-            os.mkdir(os.path.join(output_directory, worksheet, sample))
-        find_files = IdentifyFiles(appresult, ",.".join(download_file_extensions), authorisation)
-        all_file_metadata = find_files.get_files_from_appresult()
-        # Iterate over identified files of required file types
-        file_download_success = []
-        for fl in all_file_metadata:
-            file_download = DownloadFiles(fl, os.path.join(output_directory, worksheet, sample), authorisation)
-            file_download_success.append(file_download.download_files())
-        if len(all_file_metadata) == len(file_download_success):
-            print(f"All files successfully downloaded for sample {sample}, appresult {appresult}")
-        else:
-            print(f"Files may be missing for sample {sample}, appresult {appresult}. Please check.")
-
+    # Download files within appresults for which the SMP2 app successfully completed
+    # Iterate over all appresults- one per dna sample successfully completed
+    for dna_sample, appresult in appresults.items():
+        print(f"Downloading results for sample {dna_sample}")
+        print(download_files(authorisation, worksheet, dna_sample, appresult))
     print("Files downloaded for all samples and appresults")
 
 if __name__ == '__main__':
