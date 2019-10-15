@@ -35,13 +35,12 @@ class FileUpload:
             self.project_id = response.json().get("Response").get("Id")
         return self.project_id
 
-
-    def make_sample(self, file_to_upload, sample_number):
+    def make_sample(self, file_to_upload):
         sample_metadata = {}
         file_name = os.path.basename(file_to_upload)
         url = f"{v1_api}/projects/{self.project_id}/samples"
         data = {"Name": f"{self.project_name}-{file_name}", "SampleId": f"{self.project_name}-{file_name}",
-                "SampleNumber": sample_number, "Read1": "101", "Read2": "101", "IsPairedEnd": "true"}
+                "SampleNumber": 0, "Read1": "101", "Read2": "101", "IsPairedEnd": "true"}
         head = {"Content-Type": "application/x-www-form-urlencoded", "Authorization": self.authorise,
                 "User-Agent": "/python-requests/2.22.0"}
         response = requests.post(url, headers=head, data=data, allow_redirects=True)
@@ -51,7 +50,6 @@ class FileUpload:
         sample_metadata["appsession_id"] = response.json().get("Response").get("AppSession").get("Id")
         return sample_metadata
 
-
     def get_read_length_one_fq(self, fq_file):
         with gzip.open(fq_file, "rt") as fh:
             fq = FastqGeneralIterator(fh)
@@ -60,8 +58,8 @@ class FileUpload:
                 len_reads = len(fq_seq)
                 return len_reads
 
-
     def get_fastq_metadata(self, fastq):
+        read_metadata = {}
         num_reads = 0
         len_reads = 0
         # Open fastq
@@ -73,8 +71,9 @@ class FileUpload:
                     len_reads = len(fq_seq)
                 # Number of reads
                 num_reads = index
-        return (len_reads, num_reads)
-
+        read_metadata["len_reads"] = len_reads
+        read_metadata["num_reads"] = num_reads
+        return read_metadata
 
     def make_file(self, file_to_upload, sample_id):
         file_name = os.path.basename(file_to_upload)
@@ -87,7 +86,6 @@ class FileUpload:
             raise Exception(f"BaseSpace error. Error code {response.status_code} message {response.text}")
         return response.json().get("Response").get("Id")
 
-
     def upload_into_file(self, upload_file, file_id, file_chunk_num, hash):
         part_num = file_chunk_num
         url = f"{v1_api}/files/{file_id}/parts/{part_num}"
@@ -98,7 +96,6 @@ class FileUpload:
             raise Exception(f"BaseSpace error. Error code {response.status_code} message {response.text}")
         return response.json().get("Response").get("ETag")
 
-
     def set_file_upload_status(self, file_id, file_status):
         url = f"{v1_api}/files/{file_id}"
         p = {"uploadstatus": file_status}
@@ -107,7 +104,6 @@ class FileUpload:
         if response.status_code != 201:
             raise Exception(f"BaseSpace error. Error code {response.status_code} message {response.text}")
         return f"{response.json().get('Response').get('Name')} set to status {file_status}"
-
 
     def update_sample_metadata(self, file_to_upload, sample_number, sample_id, r_len, num_reads):
         sample_metadata = {}
@@ -124,7 +120,6 @@ class FileUpload:
         sample_metadata["sample_id"] = response.json().get("Response").get("Id")
         sample_metadata["appsession_id"] = response.json().get("Response").get("AppSession").get("Id")
         return sample_metadata
-
 
     def finalise_appsession(self, appsession_id, file_name):
         url = f"{v2_api}/appsessions/{appsession_id}"
