@@ -191,6 +191,14 @@ def main():
         # Write out to log file to provide data required to resume process from this point
         print(f"{dna_sample}: {tst_170_launch}")
     '''
+    tst_170 = {"19M08624": {'appsession': '12126121', 'dna_biosample_id': '3955040', 'rna_biosample_id': '3952038'},
+    "19M06925": {'appsession': '12125121', 'dna_biosample_id': '3952036', 'rna_biosample_id': '3915994'},
+    "19M07247": {'appsession': '12125122', 'dna_biosample_id': '3952037', 'rna_biosample_id': '3950095'},
+    "19M05744": {'appsession': '12125123', 'dna_biosample_id': '3955041', 'rna_biosample_id': '3915995'},
+    "19M06140": {'appsession': '12125124', 'dna_biosample_id': '3967993', 'rna_biosample_id': '3952039'},
+    "19M06564": {'appsession': '12123127', 'dna_biosample_id': '3950093', 'rna_biosample_id': '3955051'},
+    "19M05757": {'appsession': '12123128', 'dna_biosample_id': '3951020', 'rna_biosample_id': '3915996'},
+    "HD753": {'appsession': '12122124', 'dna_biosample_id': '3951021', 'rna_biosample_id': '3915997'}}    
     # Poll appsession status of launched TST 170 app- polling runs until appsession is complete then launch SMP2 v3 app
     smp_appresults = {}
     for dna_sample, tst_values in tst_170.items():

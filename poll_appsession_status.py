@@ -23,6 +23,7 @@ class PollAppsessionStatus:
                 return "Complete"
             elif response.json().get("ExecutionStatus") == "Aborted":
                 return "Fail"
+            print(f"Polling {self.appsession_id}") #TODO redirect to error channel
             time.sleep(self.sleep_time)
         return self.poll()
 

@@ -3,10 +3,10 @@
   "InputParameters":
     {
     "app-session-name":"Example [LocalDateTime]",
-    "dna-sample-id":["biosamples//librarypreps/", ""],
+    "app-result-dna-id":["biosamples//librarypreps/", ""],
     "project-id":"projects/",
-    "rna-sample-id":["biosamples//librarypreps/", ""]
+    "app-result-rna-id":["biosamples//librarypreps/", ""]
     },
-    "Name":"TruSight Tumor 170",
+    "Name":"SMP2 v3",
     "StatusSummary":"CRUK Launch"
   }

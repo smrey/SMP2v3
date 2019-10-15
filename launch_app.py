@@ -65,9 +65,9 @@ class LaunchApp:
             try:
                 app_config = json.load(smpapp_config_file)
                 input = app_config.get("InputParameters")
-                input["dna-sample-id"] = dna_config
+                input["app-result-dna-id"] = dna_config
                 input["project-id"] = f"projects/{self.project_id}"
-                input["rna-sample-id"] = rna_config
+                input["app-result-rna-id"] = rna_config
                 app_config["Name"] = f"SMP2 v3 {date_time}"
             except json.decoder.JSONDecodeError:
                 raise Exception("SMP config file is incorrectly formatted and does not contain valid json")
