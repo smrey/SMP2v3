@@ -189,7 +189,7 @@ def main():
         tst_170_launch = launch_tst170_analysis(launch_tst, worksheet, dna_sample, sample_pairs)
         tst_170[dna_sample] = tst_170_launch
         # Write out to log file to provide data required to resume process from this point
-        print(f"{dna_sample}: {tst_170_launch}")
+        print(f"{dna_sample}: {tst_170_launch}") # TODO error channel
     '''
     # Poll appsession status of launched TST 170 app- polling runs until appsession is complete then launch SMP2 v3 app
     smp_appresults = {}
@@ -219,32 +219,42 @@ def main():
 
 
     # Poll appsession status of launched SMP2 v3 app- polling runs until appsession is complete then download files
-    appresults = {}
+    appresults_dict = {}
     for dna_sample, smp_appsession in smp_appresults.items():
         rna_sample = sample_pairs.get(dna_sample)
         print(f"Polling status of SMP2 v3 application, appsession {smp_appsession}")
         polling = PollAppsessionStatus(authorisation, smp_appsession)
         poll_result = polling.poll()  # Poll status of appsession
-        print(f" TST 170 appsession {smp_appsession} for sample {dna_sample} and {rna_sample} has finished with status {poll_result}")
+        print(f" TST 170 appsession {smp_appsession} for sample {dna_sample} and {rna_sample} has finished with "
+              f"status {poll_result}")
 
         if poll_result == "Fail":
             print(f"SMP2 v3 app for samples {dna_sample} and {rna_sample} has failed to "
                     f"complete. Investigate further through the BaseSpace website.")
-            # Overwrite files to download to readme to aid with troubleshooting
-            # TODO Download file here- call function once abstracted- check working based on how appresults is returned
-            #download_file_extensions = [".log"]
-            print(download_files(authorisation, worksheet, dna_sample, polling.find_appresults(), [".log"])) #TODO see below for how this is returned
+            # Download  log files for help with troubleshooting
+            failed_appresults = polling.find_appresults()
+            if len(failed_appresults) == 1:
+                print(download_files(authorisation, worksheet, dna_sample, failed_appresults[0], [".log"]))
+            else:
+                raise Exception(f"Expected 1 appresult for appsession {smp_appsession}, dna sample {dna_sample} "
+                                f"but found {len(failed_appresults)}. File path to results could not be determined- "
+                                f"please download files manually from BaseSpace")
             # Move on to the next pair's appsession
             continue
 
-
-        # Appresults identifier required for file download- TODO Where does this belong?- changed to match several independent launches
-        appresults[dna_sample] = polling.find_appresults()
-        print(appresults) # TODO Check what is going on here- how many results get returned and are they list or string
+        # Appresults identifier required for file download
+        appresults = polling.find_appresults()
+        if len(appresults) == 1:
+            appresults_dict[dna_sample] = appresults[0]
+        else:
+            raise Exception(f"Expected 1 appresult for appsession {smp_appsession}, dna sample {dna_sample} but found "
+                            f"{len(appresults)}. File path to results could not be determined- please download files"
+                            f"manually from BaseSpace")
+    print(appresults_dict) # TODO error channel
 
     # Download files within appresults for which the SMP2 app successfully completed
     # Iterate over all appresults- one per dna sample successfully completed
-    for dna_sample, appresult in appresults.items():
+    for dna_sample, appresult in appresults_dict.items():
         print(f"Downloading results for sample {dna_sample}")
         print(download_files(authorisation, worksheet, dna_sample, appresult))
     print("Files downloaded for all samples and appresults")
