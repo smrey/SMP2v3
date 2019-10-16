@@ -15,7 +15,6 @@ class ParseSampleSheet:
         self.sample_sheet_dir = sample_sheet_dir
         self.sample_sheet_dataframe = pd.DataFrame()
 
-
     def read_in_sample_sheet(self):
         '''
         :param ss: the Illumina sample sheet
@@ -33,12 +32,10 @@ class ParseSampleSheet:
         self.sample_sheet_dataframe = ss_data.dropna(subset=["Sample_Name"])
         return self.sample_sheet_dataframe
 
-
     def identify_samples(self):
         # Extract sample identifiers (column 1 of sample sheet)
         sample_ids = self.sample_sheet_dataframe["Sample_ID"]  # Select samples as a series object
         return sample_ids
-
 
     def identify_worksheet(self):
         '''
@@ -48,8 +45,8 @@ class ParseSampleSheet:
         worksheet_id = self.sample_sheet_dataframe["Sample_Plate"].unique().tolist()[0]  # Only one entry in list if there is one worksheet- assumed
         return worksheet_id
 
-
-    def locate_all_fastqs(self, samples, results_dir):
+    @staticmethod
+    def locate_all_fastqs(samples, results_dir):
         '''
         :param ss_df: the sample-related information from the Illumina sample sheet as a data frame
         :param fq_loc:
@@ -71,8 +68,8 @@ class ParseSampleSheet:
             raise Exception(f"No fastqs found for sample or samples: {no_fastqs}")
         return sample_fastqs_dict
 
-
-    def load_all_variables(self, samples, results_dir):
+    @staticmethod
+    def load_all_variables(samples, results_dir):
         # Create dictionary to hold variables data
         sample_variables_dict = {}
         for index_sample in samples.iteritems():
@@ -90,8 +87,8 @@ class ParseSampleSheet:
                 sample_variables_dict[sample] = variables_dict
         return sample_variables_dict
 
-
-    def create_sample_pairs(self, variables):
+    @staticmethod
+    def create_sample_pairs(variables):
         dna_dict = {}
         rna_dict = {}
         for k, v in variables.items():

@@ -13,7 +13,6 @@ class FileUpload:
         self.project_name = project_name
         self.project_id = None
 
-
     def create_basespace_project(self):
         '''
         :param project_name: Worksheet id from the sample sheet, which will be the project name in BaseSpace
@@ -26,11 +25,9 @@ class FileUpload:
         if response.status_code != 200 and response.status_code != 201:
             raise Exception(f"BaseSpace error. Error code {response.status_code} message {response.text}")
         elif response.status_code == 200:
-            print(f"Project {self.project_name} already exists and is writeable")
-            # Update project id inside object
+            # Update project id inside object if project already exists
             self.project_id = response.json().get("Response").get("Id")
         elif response.status_code == 201:
-            print(f"Project {self.project_name} successfully created")
             # Update project id inside object
             self.project_id = response.json().get("Response").get("Id")
         return self.project_id
