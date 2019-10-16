@@ -1,7 +1,4 @@
 import os
-import gzip
-import time
-from Bio.SeqIO.QualityIO import FastqGeneralIterator
 from parse_sample_sheet import ParseSampleSheet
 from load_configuration import LoadConfiguration
 from split_file import SplitFile
@@ -18,11 +15,12 @@ from config import download_file_extensions
 #from config import config_file_path
 
 # testing file paths
-ss_location = os.getcwd() # to be commandline arg1- os.path.join() useful
+ss_location = os.getcwd() # point to archive/fastq/run id directory
 results_directory = os.getcwd() # results directory
 config_file_path = "/data/diagnostics/pipelines/CRUK/CRUK-2.0.0/" # TODO import version from illuminaQC- cmdline opt (argparse)
 output_directory = os.getcwd() # results directory
-download_file_extensions[0] = f".{download_file_extensions[0]}" # TODO make this clearer- adds leading . for 1st extension
+# Adds the leading . for the first extension
+download_file_extensions[0] = f".{download_file_extensions[0]}"
 
 
 def upload_files(upload_file, sample, all_fastqs):
@@ -159,7 +157,7 @@ def main():
     # Pair samples- DNA sample is key, RNA sample to look up- if No RNA sample, it is None
     sample_pairs = my_sample_sheet.create_sample_pairs(all_variables)
     # Write out sample pairs to log file for checking if needed
-    print(f"sample pairs are {sample_pairs}")
+    print(f"sample pairs are {sample_pairs}") # TODO error channel
 
     # Create a project in BaseSpace
     upload_file = FileUpload(authorisation, worksheet)
@@ -225,7 +223,7 @@ def main():
         print(f"Polling status of SMP2 v3 application, appsession {smp_appsession}")
         polling = PollAppsessionStatus(authorisation, smp_appsession)
         poll_result = polling.poll()  # Poll status of appsession
-        print(f" TST 170 appsession {smp_appsession} for sample {dna_sample} and {rna_sample} has finished with "
+        print(f" SMP2 v3 appsession {smp_appsession} for sample {dna_sample} and {rna_sample} has finished with "
               f"status {poll_result}")
 
         if poll_result == "Fail":
