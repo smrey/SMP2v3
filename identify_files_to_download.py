@@ -13,7 +13,7 @@ class IdentifyFiles:
 
     def  get_files_from_appresult(self):
         url = f"{v1_api}/appresults/{self.appresultid}/files/"
-        p = {"Extensions": self.file_extensions}
+        p = {"Extensions": self.file_extensions, "Limit": 50}
         head = {"Authorization": self.authorise}
         response = requests.get(url, params=p, headers=head)
         if response.status_code != 200:
