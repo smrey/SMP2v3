@@ -37,7 +37,7 @@ countQCFlagFails() {
 
 #load sample & pipeline variables
 . *.variables
-. /data/diagnostics/pipelines/SomaticAmplicon/SomaticAmplicon-"$version"/"$panel"/"$panel".variables
+. /data/diagnostics/pipelines/CRUK/CRUK-"$version"/"$panel"/CRUK-"$version"_"$panel".variables
 
 ### Preprocessing ###
 
@@ -51,8 +51,8 @@ for fastqPair in $(ls "$sampleId"_S*.fastq.gz | cut -d_ -f1-3 | sort | uniq); do
     laneId=$(echo "$fastqPair" | cut -d_ -f3)
     read1Fastq=$(ls "$fastqPair"_R1_*fastq.gz)
     read2Fastq=$(ls "$fastqPair"_R2_*fastq.gz)
-    unzippedRead1Fastq=${read1Fastq%.*}
-    unzippedRead2Fastq=${read2Fastq%.*}
+    unzippedRead1Fastq=${read1Fastq%%.*}
+    unzippedRead2Fastq=${read2Fastq%%.*}
 
     #fastqc
     /share/apps/fastqc-distros/fastqc_v0.11.5/fastqc -d /state/partition1/tmpdir --threads 12 --extract "$read1Fastq"
@@ -67,17 +67,29 @@ for fastqPair in $(ls "$sampleId"_S*.fastq.gz | cut -d_ -f1-3 | sort | uniq); do
     fi
 
     #clean up
-    rm "unzippedRead1Fastq".fastq "$unzippedRead2Fastq".fastq *_fastqc.zip
+    rm *_fastqc.zip
     rm -r "$unzippedRead1Fastq"_fastqc "$unzippedRead2Fastq"_fastqc
+
+    #print fastq paths <path2r1> <path2r2>
+    echo -e "$(find "$PWD" -name "$read1Fastq")\t$(find "$PWD" -name "$read1Fastq")" >> ../FASTQs.list
+
 done
 
+#Print QC metrics
+echo -e "RawSequenceQuality" > "$seqId"_"$sampleId"_QC.txt
+echo -e "$rawSequenceQuality" >> "$seqId"_"$sampleId"_QC.txt
 
-source /home/sr/anaconda2/bin/activate SMP2v3
+#check if all samples are written
+if [ $(find .. -maxdepth 1 -mindepth 1 -type d | wc -l | sed 's/^[[:space:]]*//g') -eq $(sort ../FASTQs.list | uniq | wc -l | sed 's/^[[:space:]]*//g') ]; then
 
-# Run CRUK SMP2v3 pipeline
-#python CRUK_SMPv3.py "$version" # Edit depending on argparse options
+    # Activate Conda environment
+    source /home/transfer/minconda3/bin/activate SMP2v3
 
-source /home/sr/anaconda2/bin/deactivate
+    # Run CRUK SMP2v3 pipeline
+    echo python CRUK_SMPv3.py "$version" # Edit depending on argparse options
 
-### Generate Combined QC File ###
-python /data/diagnostics/scripts/merge_qc_files.py .
+    source /home/transfer/miniconda3/bin/deactivate
+
+    ### Generate Combined QC File ###
+    python /data/diagnostics/scripts/merge_qc_files.py .
+fi
