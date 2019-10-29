@@ -11,7 +11,7 @@ class IdentifyFiles:
         self.authorise = auth
         self.files = {}
 
-    def  get_files_from_appresult(self):
+    def get_files_from_appresult(self):
         url = f"{v1_api}/appresults/{self.appresultid}/files/"
         p = {"Extensions": self.file_extensions, "Limit": 200}
         head = {"Authorization": self.authorise}

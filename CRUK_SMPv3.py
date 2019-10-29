@@ -41,12 +41,11 @@ handler_out.setLevel(logging.INFO)
 handler_out.addFilter(MyFilter(logging.INFO))
 
 handler_err = logging.StreamHandler(sys.stderr)
-handler_err.setLevel(logging.DEBUG)
-handler_err.addFilter(MyFilter(logging.DEBUG))
+handler_err.setLevel(logging.WARNING)
+handler_err.addFilter(MyFilter(logging.WARNING))
 
 log.addHandler(handler_out)
 log.addHandler(handler_err)
-
 
 
 def upload_files(upload_file, sample, all_fastqs):
@@ -183,13 +182,13 @@ def main():
     # Pair samples- DNA sample is key, RNA sample to look up- if No RNA sample, it is None
     sample_pairs = my_sample_sheet.create_sample_pairs(all_variables)
     # Write out sample pairs to log file for checking if needed
-    log.debug(f"sample pairs are {sample_pairs}")
+    log.warning(f"sample pairs are {sample_pairs}")
 
     # Create a project in BaseSpace
     upload_file = FileUpload(authorisation, worksheet)
     project = upload_file.create_basespace_project()
     log.info(f"Project {worksheet} created")
-    log.debug(f"Project id from project name {worksheet} is {project}")
+    log.warning(f"Project id from project name {worksheet} is {project}")
 
     # For each sample on worksheet
     for sample_num, sample in enumerate(samples_to_upload, 1):
@@ -214,7 +213,7 @@ def main():
         tst_170_launch = launch_tst170_analysis(launch_tst, worksheet, dna_sample, sample_pairs)
         tst_170[dna_sample] = tst_170_launch
         # Write out to log file to provide data required to resume process from this point
-        log.debug(f"{dna_sample}: {tst_170_launch}")
+        log.warning(f"{dna_sample}: {tst_170_launch}")
 
     # Poll appsession status of launched TST 170 app- polling runs until appsession is complete then launch SMP2 v3 app
     smp_appresults = {}
@@ -275,7 +274,7 @@ def main():
             raise Exception(f"Expected 1 appresult for appsession {smp_appsession}, dna sample {dna_sample} but found "
                             f"{len(appresults)}. File path to results could not be determined- please download files"
                             f"manually from BaseSpace")
-    log.debug(appresults_dict)
+    log.warning(appresults_dict)
 
     # Download files within appresults for which the SMP2 app successfully completed
     # Iterate over all appresults- one per dna sample successfully completed
