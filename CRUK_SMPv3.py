@@ -15,7 +15,6 @@ from config import app_version
 from config import smp2_app_name
 from config import smp2_app_version
 from config import download_file_extensions
-#from config import config_file_path
 
 # testing file paths
 ss_location = os.getcwd() # point to archive/fastq/run id directory

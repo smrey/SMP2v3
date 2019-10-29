@@ -11,7 +11,6 @@ class PollAppsessionStatus:
         self.appsession_id = appsession_id
         self.sleep_time = 900 # 15 minutes in seconds
 
-
     def poll(self):
         url = f"{v2_api}/appsessions/{self.appsession_id}"
         head = {"Authorization": self.authorise, "User-Agent": "/python-requests/2.22.0"}
@@ -25,7 +24,6 @@ class PollAppsessionStatus:
                 return "Fail"
             time.sleep(self.sleep_time)
         return self.poll()
-
 
     def find_appresults(self):
         url = f"{v1_api}/appsessions/{self.appsession_id}/appresults"

@@ -3,6 +3,7 @@ import os
 from config import v1_api
 from config import v2_api
 
+
 class DownloadFiles:
 
     def __init__(self, file_info, download_location, auth):

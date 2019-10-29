@@ -1,13 +1,6 @@
-# Parse sample sheet to extract sampleid (col 1- header Sample_ID), sample name (col 2- header Sample_Name),
-# worksheet id (col 3- header Sample_plate)
-
 import pandas as pd
 import glob
 import os
-
-#ss_location = "/Users/sararey/Documents/cruk_test_data/SampleSheet.csv" # to be commandline arg1
-# Assumes IlluminaQC script has run- change path if demuxed fastqs will be located elsewhere
-#fastq_location = "/Users/sararey/Documents/cruk_test_data/rawFQs/"
 
 
 class ParseSampleSheet:
@@ -42,7 +35,8 @@ class ParseSampleSheet:
         :param ss_df: the sample-related information from the Illumina sample sheet as a data frame
         :return: a string of the worksheet identifier for the run
         '''
-        worksheet_id = self.sample_sheet_dataframe["Sample_Plate"].unique().tolist()[0]  # Only one entry in list if there is one worksheet- assumed
+        # Only one entry in list if there is one worksheet- assumed
+        worksheet_id = self.sample_sheet_dataframe["Sample_Plate"].unique().tolist()[0]
         return worksheet_id
 
     @staticmethod

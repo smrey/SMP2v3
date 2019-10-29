@@ -5,6 +5,7 @@ import datetime
 from config import v1_api
 from config import v2_api
 
+
 class LaunchApp:
 
     def __init__(self, auth, project_id, app_name, app_version):
