@@ -1,6 +1,14 @@
+"""
+Description here
+"""
+
+__version__ = '2.0.0'
+__updated__ = "Date here"
+
 import os
 import logging
 import sys
+import argparse
 import time
 from parse_sample_sheet import ParseSampleSheet
 from load_configuration import LoadConfiguration
@@ -16,15 +24,16 @@ from config import smp2_app_name
 from config import smp2_app_version
 from config import download_file_extensions
 
-# testing file paths
-ss_location = os.getcwd() # point to archive/fastq/run id directory
-results_directory = os.getcwd() # results directory
-config_file_path = "/data/diagnostics/pipelines/CRUK/CRUK-2.0.0/" # TODO import version from illuminaQC- cmdline opt (argparse)
-output_directory = os.getcwd() # results directory
+# file paths
+ss_location = os.getcwd()  # point to archive/fastq/run id directory
+results_directory = os.getcwd()  # results directory
+config_file_path = "/data/diagnostics/pipelines/CRUK/CRUK-2.0.0/"  # TODO import version from illuminaQC- cmdline opt (argparse)
+output_directory = os.getcwd()  # results directory
 # Adds the leading . for the first extension
 download_file_extensions[0] = f".{download_file_extensions[0]}"
 
 
+# Class to filter logging to restrict to one level only
 class MyFilter(object):
     def __init__(self, level):
         self.__level = level
@@ -33,6 +42,7 @@ class MyFilter(object):
         return log_record.levelno <= self.__level
 
 
+# Set up logger
 log = logging.getLogger()
 log.setLevel(logging.DEBUG)
 
@@ -48,7 +58,19 @@ log.addHandler(handler_out)
 log.addHandler(handler_err)
 
 
+def get_args():
+    '''
+    :return:
+    '''
+
+
 def upload_files(upload_file, sample, all_fastqs):
+    '''
+    :param upload_file:
+    :param sample:
+    :param all_fastqs:
+    :return:
+    '''
     file_upload_info = {}
     read_num = 0  # Cumulative tally
     len_reads = 0  # Same across all fastqs on the run
@@ -105,6 +127,13 @@ def upload_files(upload_file, sample, all_fastqs):
 
 
 def launch_tst170_analysis(launch, worksheet_id, dna_sample, pairs_dict):
+    '''
+    :param launch:
+    :param worksheet_id:
+    :param dna_sample:
+    :param pairs_dict:
+    :return:
+    '''
     # Identify biosamples for upload
     dna_biosample_id = launch.get_biosamples(f"{worksheet_id}-{dna_sample}")
     rna_sample = pairs_dict.get(dna_sample)
@@ -126,6 +155,11 @@ def launch_tst170_analysis(launch, worksheet_id, dna_sample, pairs_dict):
 
 
 def launch_smp_analysis(launch_smp, tst_values):
+    '''
+    :param launch_smp:
+    :param tst_values:
+    :return:
+    '''
     # Get dataset ids using TST 170 appsession id and nucleotide biosample id
     dna_dataset_id = launch_smp.get_datasets(tst_values.get("appsession"), tst_values.get("dna_biosample_id"))
     rna_dataset_id = launch_smp.get_datasets(tst_values.get("appsession"), tst_values.get("rna_biosample_id"))
@@ -138,6 +172,14 @@ def launch_smp_analysis(launch_smp, tst_values):
 
 
 def download_files(authorisation, worksheet_id, sample, appresult, download_file_extensions=download_file_extensions):
+    '''
+    :param authorisation:
+    :param worksheet_id:
+    :param sample:
+    :param appresult:
+    :param download_file_extensions:
+    :return:
+    '''
     # Create directory for downloaded files where one does not exist
     if not os.path.isdir(os.path.join(output_directory, worksheet_id)):
         os.mkdir(os.path.join(output_directory, worksheet_id))
@@ -159,6 +201,9 @@ def download_files(authorisation, worksheet_id, sample, appresult, download_file
 
 
 def main():
+    '''
+    :return:
+    '''
     # Parse sample sheet to extract relevant sample information
     my_sample_sheet = ParseSampleSheet(ss_location)
     my_sample_sheet.read_in_sample_sheet()

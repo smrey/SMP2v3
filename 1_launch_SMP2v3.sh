@@ -71,19 +71,29 @@ for fastqPair in $(ls "$sampleId"_S*.fastq.gz | cut -d_ -f1-3 | sort | uniq); do
     rm -r "$unzippedRead1Fastq"_fastqc "$unzippedRead2Fastq"_fastqc
 
     #print fastq paths <path2r1> <path2r2>
-    echo -e "$(find "$PWD" -name "$read1Fastq")\t$(find "$PWD" -name "$read1Fastq")" >> ../FASTQs.list
+    #echo -e "$(find "$PWD" -name "$read1Fastq")\t$(find "$PWD" -name "$read1Fastq")" >> ../FASTQs.list
 
 done
+
+#Now that fastqs have been processed add the sample to a list
+echo -e $(ls *.fastq.gz | cut -d'_' -f1-2 | uniq) >> ../FASTQs.list
 
 #Print QC metrics
 echo -e "RawSequenceQuality" > "$seqId"_"$sampleId"_QC.txt
 echo -e "$rawSequenceQuality" >> "$seqId"_"$sampleId"_QC.txt
 
+# Create variables to check if all samples are written
+numSamplesWithFqs=$(sort ../FASTQs.list | uniq | wc -l | sed 's/^[[:space:]]*//g')
+numSamplesInProject=$(find .. -maxdepth 1 -mindepth 1 -type d | wc -l | sed 's/^[[:space:]]*//g')
+
 #check if all samples are written
-if [ $(find .. -maxdepth 1 -mindepth 1 -type d | wc -l | sed 's/^[[:space:]]*//g') -eq $(sort ../FASTQs.list | uniq | wc -l | sed 's/^[[:space:]]*//g') ]; then
+if [ $numSamplesInProject -eq $numSamplesWithFqs ]; then
+
+    #copy sample sheet to results folder of runs
+    cp /data/archive/fastq/"$seqId"/SampleSheet.csv .
 
     # Activate Conda environment
-    source /home/transfer/minconda3/bin/activate SMP2v3
+    source /home/transfer/miniconda3/bin/activate SMP2v3
 
     # Run CRUK SMP2v3 pipeline
     echo python CRUK_SMPv3.py "$version" # Edit depending on argparse options
