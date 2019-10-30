@@ -56,7 +56,7 @@ for fastqPair in $(ls "$sampleId"_S*.fastq.gz | cut -d_ -f1-3 | sort | uniq); do
 
     #fastqc
     /share/apps/fastqc-distros/fastqc_v0.11.5/fastqc -d /state/partition1/tmpdir --threads 12 --extract "$read1Fastq"
-   /share/apps/fastqc-distros/fastqc_v0.11.5/fastqc -d /state/partition1/tmpdir --threads 12 --extract "$read2Fastq"
+    /share/apps/fastqc-distros/fastqc_v0.11.5/fastqc -d /state/partition1/tmpdir --threads 12 --extract "$read2Fastq"
 
     mv "$unzippedRead1Fastq"_fastqc/summary.txt "$unzippedRead1Fastq"_fastqc.txt
     mv "$unzippedRead2Fastq"_fastqc/summary.txt "$unzippedRead2Fastq"_fastqc.txt
@@ -96,7 +96,7 @@ if [ $numSamplesInProject -eq $numSamplesWithFqs ]; then
     source /home/transfer/miniconda3/bin/activate SMP2v3
 
     # Run CRUK SMP2v3 pipeline
-    echo python CRUK_SMPv3.py "$version" # Edit depending on argparse options
+    echo python CRUK_SMPv3.py /data/diagnostics/pipelines/CRUK/CRUK-"$version"/access/
 
     source /home/transfer/miniconda3/bin/deactivate
 

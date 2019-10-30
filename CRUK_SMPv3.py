@@ -9,6 +9,7 @@ import os
 import logging
 import sys
 import argparse
+import textwrap
 import time
 from parse_sample_sheet import ParseSampleSheet
 from load_configuration import LoadConfiguration
@@ -25,9 +26,8 @@ from config import smp2_app_version
 from config import download_file_extensions
 
 # file paths
-ss_location = os.getcwd()  # point to archive/fastq/run id directory
+ss_location = os.getcwd()  # results directory
 results_directory = os.getcwd()  # results directory
-config_file_path = "/data/diagnostics/pipelines/CRUK/CRUK-2.0.0/"  # TODO import version from illuminaQC- cmdline opt (argparse)
 output_directory = os.getcwd()  # results directory
 # Adds the leading . for the first extension
 download_file_extensions[0] = f".{download_file_extensions[0]}"
@@ -62,6 +62,35 @@ def get_args():
     '''
     :return:
     '''
+    argument_parser = argparse.ArgumentParser(
+        formatter_class=argparse.RawTextHelpFormatter,
+        description=textwrap.dedent(
+            '''
+            summary:
+            Uploads fastqs for the CRUK project to BaseSpace, launches two applications and downloads the required
+            results for analysis and reporting
+            '''
+        )
+    )
+
+    # Adds version and date updated
+    argument_parser.add_argument(
+        '-v', '--version', action='version',
+        version=f"version: {__version__} updated on: {__updated__}"
+    )
+
+    # Add arguments
+    # REQUIRED: Path to config file containing authorisation information
+    argument_parser.add_argument(
+        'path_to_config_file', action='store',
+        help=textwrap.dedent(
+            '''
+            File path to config file location containing authentication credentials. Set up according to template
+            in bs.config.json.example. Config file must be named bs.config.json. REQUIRED.
+            '''
+        )
+    )
+    return argument_parser.parse_args()
 
 
 def upload_files(upload_file, sample, all_fastqs):
@@ -200,10 +229,13 @@ def download_files(authorisation, worksheet_id, sample, appresult, download_file
     return file_dl_result
 
 
-def main():
+def main(args):
     '''
     :return:
     '''
+    # Load command line arguments
+    config_file_path = args.path_to_config_file
+
     # Parse sample sheet to extract relevant sample information
     my_sample_sheet = ParseSampleSheet(ss_location)
     my_sample_sheet.read_in_sample_sheet()
@@ -330,4 +362,5 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    args = get_args()
+    main(args)
