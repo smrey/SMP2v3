@@ -89,7 +89,10 @@ numSamplesInProject=$(find .. -maxdepth 1 -mindepth 1 -type d | wc -l | sed 's/^
 #check if all samples are written
 if [ $numSamplesInProject -eq $numSamplesWithFqs ]; then
 
-    #copy sample sheet to results folder of runs
+    # Return to run level directory
+    cd ..
+
+    # Copy sample sheet to results folder of runs
     cp /data/archive/fastq/"$seqId"/SampleSheet.csv .
 
     # Activate Conda environment
