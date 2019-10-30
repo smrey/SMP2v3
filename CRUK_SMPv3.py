@@ -13,7 +13,6 @@ import textwrap
 import time
 from parse_sample_sheet import ParseSampleSheet
 from load_configuration import LoadConfiguration
-from split_file import SplitFile
 from file_upload import FileUpload
 from launch_app import LaunchApp
 from poll_appsession_status import PollAppsessionStatus
@@ -66,19 +65,19 @@ def get_args():
     # OPTIONAL: choices for resuming part way through the pipeline
     resuming_options = argument_parser.add_mutually_exclusive_group()
     resuming_options.add_argument(
-        '-t', '--tst170', action='store',
+        '-t', '--tst170', action='store_true', default=False,
         help=textwrap.dedent(
             '''
             Set this flag to start pipeline from the launch of the TST170 app (post upload of all files). OPTIONAL.
             '''))
     resuming_options.add_argument(
-        '-s' '--smp2', action='store',
+        '-s', '--smp2', action='store_true', default=False,
         help=textwrap.dedent(
             '''
             Set this flag to start pipeline from the launch of the SMP2v3 app (post completion of TST170 app). OPTIONAL.
             '''))
     resuming_options.add_argument(
-        '-d', '-dl_files', action='store',
+        '-d', '--dl_files', action='store_true', default=False,
         help=textwrap.dedent(
             '''
             Set this flag to download required files for all DNA samples (will include RNA sample data paired with
@@ -90,68 +89,12 @@ def get_args():
 
 class CrukSmp:
     def __init__(self):
+        self.config = LoadConfiguration(args.path_to_config_file)
+        #self.authorisation = self.config.get_authentication_token
         self.worksheet = "" # TODO finish work here- required params for resuming
+        self.sample_pairs = ""
 
-    def upload_files(self, upload_file, sample, all_fastqs):
-        '''
-        :param upload_file:
-        :param sample:
-        :param all_fastqs:
-        :return:
-        '''
-        file_upload_info = {}
-        read_num = 0  # Cumulative tally
-        len_reads = 0  # Same across all fastqs on the run
-        # Create a sample inside the project in BaseSpace
-        sample_metadata = upload_file.make_sample(sample)
-        sample_id = sample_metadata.get("sample_id")
-        appsession_id = sample_metadata.get("appsession_id")
-        file_upload_info["sample_id"] = sample_id
-        file_upload_info["appsession_id"] = appsession_id
-        # Pull out files associated with that particular sample
-        fastq_files = all_fastqs.get(sample)
-        # For each file associated with that sample
-        for f in fastq_files:
-            print(f"Uploading fastq {f}")
-            # Identify if read 1 or read 2
-            match_read = f.split("_")
-            read = match_read[:][-2] # Requires no underscores in file name, SMP2 v3 app also requires this
-            # Extract required fastq information from R1- assume R2 is the same- paired end
-            if read == "R1":
-                fq_metadata = upload_file.get_fastq_metadata(f)  # Returns (max read length, number of reads in fastq)
-                if len_reads < fq_metadata.get("len_reads"):
-                    len_reads = fq_metadata.get("len_reads")
-                num_reads = fq_metadata.get("num_reads")
-                # Cumulative tally of read numbers for this sample
-                read_num += num_reads
-            # Create a file inside the sample in BaseSpace
-            file_id = upload_file.make_file(f, sample_id)
-            # Split the file into chunks for upload
-            file_splitting = SplitFile(os.path.join(results_directory, sample, f))
-            chunks = file_splitting.get_file_chunk_size()
-            file_chunks_created = file_splitting.split_file(chunks)
-            num_chunks_uploaded = 0
-            for i, f_chunk in enumerate(file_chunks_created):
-                # Calculate hash for file chunk
-                md5_b64 = file_splitting.calc_md5_b64(f_chunk)
-                md5_hex = file_splitting.calc_md5_hex(f_chunk)
-                # Populate sample with file chunks
-                chunk_num = i + 1
-                file_part_uploaded_md5 = upload_file.upload_into_file(f_chunk, file_id, chunk_num, md5_b64)
-                # Check MD5s match before and after upload
-                if md5_hex != file_part_uploaded_md5:
-                    raise Exception(f"MD5s do not match before and after file upload for file chunk {f_chunk}")
-                # Delete file chunk after upload successful
-                os.remove(f_chunk)
-                num_chunks_uploaded += 1
-            # Check all file parts uploaded
-            if len(file_chunks_created) != num_chunks_uploaded:
-                raise Exception(f"Not all file chunks successfully uploaded for file {f}")
-            file_upload_info["len_reads"] = len_reads
-            file_upload_info["read_num"] = read_num
-            # Set file status to complete
-            log.info(upload_file.set_file_upload_status(file_id, "complete"))
-        return file_upload_info
+
 
     def launch_tst170_analysis(self, launch, worksheet_id, dna_sample, pairs_dict):
         '''
@@ -228,11 +171,21 @@ class CrukSmp:
         '''
         :return:
         '''
-        # Load command line arguments
-        config_file_path = args.path_to_config_file
+        if args.tst170:
+            # Resume at launch of TST170 app
+            print("trigger tst170")
+        elif args.smp2:
+            # Resume at launch of SMP2v3 app
+            print("trigger smp2")
+        elif args.dl_files:
+            print("trigger download")
+
+        #TODO Stuff required for every program execution
+        # Load command line arguments- TODO WORK ON WHERE
+
 
         # Parse sample sheet to extract relevant sample information
-        my_sample_sheet = ParseSampleSheet(ss_location)
+        my_sample_sheet = ParseSampleSheet(os.getcwd())
         my_sample_sheet.read_in_sample_sheet()
 
         # Pull out a series of samples to upload to BaseSpace
@@ -242,47 +195,39 @@ class CrukSmp:
         worksheet = my_sample_sheet.identify_worksheet()
 
         # Load the config file containing user-specific information and obtain the authentication token
-        config = LoadConfiguration(config_file_path)
-        authorisation = config.get_authentication_token()
-
-        # Locate the fastqs associated with all samples
-        all_fastqs = my_sample_sheet.locate_all_fastqs(samples_to_upload, results_directory)
+        #config = LoadConfiguration(config_file_path)
+        #authorisation = config.get_authentication_token()
 
         # Load and parse out variables from variables files associated with each sample
-        all_variables = my_sample_sheet.load_all_variables(samples_to_upload, results_directory)
+        all_variables = my_sample_sheet.load_all_variables(samples_to_upload, os.getcwd())
 
         # Pair samples- DNA sample is key, RNA sample to look up- if No RNA sample, it is None
         sample_pairs = my_sample_sheet.create_sample_pairs(all_variables)
-        # Write out sample pairs to log file for checking if needed
+        # Write out sample pairs to log file for checking if needed TODO WHERE
         log.warning(f"sample pairs are {sample_pairs}")
 
-        # Create a project in BaseSpace
-        upload_file = FileUpload(authorisation, worksheet)
-        project = upload_file.create_basespace_project()
+        # Locate the fastqs associated with all samples
+        all_fastqs = my_sample_sheet.locate_all_fastqs(samples_to_upload, os.getcwd())
+
+        # Create a project in BaseSpace- will not create if it already exists, but will still return project id
+        upload = FileUpload(self.config.get_authentication_token, worksheet, samples_to_upload, all_fastqs)
+        project = upload.create_basespace_project()
         log.info(f"Project {worksheet} created")
         log.warning(f"Project id from project name {worksheet} is {project}")
 
-        # For each sample on worksheet
-        for sample_num, sample in enumerate(samples_to_upload, 1):
-            log.info(f"Uploading sample {sample}")
-            sample_data = upload_files(upload_file, sample, all_fastqs)
-            # Update sample metadata
-            upload_file.update_sample_metadata(sample, sample_num, sample_data.get("sample_id"),
-                                               sample_data.get("len_reads"), sample_data.get("read_num"))
-            # Mark file upload appsession as complete
-            upload_file.finalise_appsession(sample_data.get("appsession_id"), sample)
-
-        # Wait to allow biosample indexes to update (5 seconds)
-        time.sleep(5)
+        # All logic for uploading files
+        upload.upload_files()
 
         # Launch application
         # Create launch app object for TST 170
-        launch_tst = LaunchApp(authorisation, project, app_name, app_version)
+        launch_tst = LaunchApp(self.config.get_authentication_token, project, app_name, app_version)
+
+        #TODO working here
 
         # Launch TST170 app for DNA, RNA pairs
         tst_170 = {}
         for dna_sample in sample_pairs.keys():
-            tst_170_launch = launch_tst170_analysis(launch_tst, worksheet, dna_sample, sample_pairs)
+            tst_170_launch = self.launch_tst170_analysis(launch_tst, worksheet, dna_sample, sample_pairs)
             tst_170[dna_sample] = tst_170_launch
             # Write out to log file to provide data required to resume process from this point
             log.warning(f"{dna_sample}: {tst_170_launch}")
@@ -293,7 +238,7 @@ class CrukSmp:
             rna_sample = sample_pairs.get(dna_sample)
             appsession = tst_values.get("appsession")
             log.info(f"Polling status of TST 170 application, appsession {tst_values.get('appsession')}")
-            polling = PollAppsessionStatus(authorisation, tst_values.get("appsession"))
+            polling = PollAppsessionStatus(self.config.get_authentication_token, tst_values.get("appsession"))
             poll_result = polling.poll()  # Poll status of appsession
             log.info(f" TST 170 appsession {appsession} for samples {dna_sample} and {rna_sample} has finished with "
                   f"status {poll_result}")
@@ -306,7 +251,7 @@ class CrukSmp:
 
             # Launch SMP2v3 app as each pair completes analysis with the TST170 app
             # Create launch app object for SMP2 v3
-            launch_smp = LaunchApp(authorisation, project, smp2_app_name, smp2_app_version)
+            launch_smp = LaunchApp(self.config.get_authentication_token, project, smp2_app_name, smp2_app_version)
             # Find specific application ID for application and version number of SMP2 app
             launch_smp.get_app_group_id()
             launch_smp.get_app_id()
@@ -319,7 +264,7 @@ class CrukSmp:
         for dna_sample, smp_appsession in smp_appresults.items():
             rna_sample = sample_pairs.get(dna_sample)
             log.info(f"Polling status of SMP2 v3 application, appsession {smp_appsession}")
-            polling = PollAppsessionStatus(authorisation, smp_appsession)
+            polling = PollAppsessionStatus(self.config.get_authentication_token, smp_appsession)
             poll_result = polling.poll()  # Poll status of appsession
             log.info(f" SMP2 v3 appsession {smp_appsession} for sample {dna_sample} and {rna_sample} has finished with "
                   f"status {poll_result}")
@@ -330,7 +275,7 @@ class CrukSmp:
                 # Download  log files for help with troubleshooting
                 failed_appresults = polling.find_appresults()
                 if len(failed_appresults) == 1:
-                    log.info(download_files(authorisation, worksheet, dna_sample, failed_appresults[0], [".log"]))
+                    log.info(download_files(self.config.get_authentication_token, worksheet, dna_sample, failed_appresults[0], [".log"]))
                 else:
                     raise Exception(f"Expected 1 appresult for appsession {smp_appsession}, dna sample {dna_sample} "
                                     f"but found {len(failed_appresults)}. File path to results could not be determined- "
@@ -352,7 +297,7 @@ class CrukSmp:
         # Iterate over all appresults- one per dna sample successfully completed
         for dna_sample, appresult in appresults_dict.items():
             log.info(f"Downloading results for sample {dna_sample}")
-            log.info(download_files(authorisation, worksheet, dna_sample, appresult))
+            log.info(download_files(self.config.get_authentication_token, worksheet, dna_sample, appresult)) #TODO ??
         log.info("Files downloaded for all samples and appresults")
 
 
@@ -362,14 +307,14 @@ if __name__ == '__main__':
     __updated__ = "Date here"
 
     # file paths
-    ss_location = os.getcwd()  # results directory
-    results_directory = os.getcwd()  # results directory
+    #ss_location = os.getcwd()  # results directory
+    #results_directory = os.getcwd()  # results directory
     output_directory = os.getcwd()  # results directory
     # Adds the leading . for the first extension
     download_file_extensions[0] = f".{download_file_extensions[0]}"
 
     # Set up logger
-    log = logging.getLogger()
+    log = logging.getLogger(__name__) # TODO Share this logger across the project
     log.setLevel(logging.DEBUG)
     handler_out = logging.StreamHandler(sys.stdout)
     handler_out.setLevel(logging.INFO)

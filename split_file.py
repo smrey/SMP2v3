@@ -3,16 +3,15 @@ from math import floor
 import hashlib
 import base64
 
+
 class SplitFile:
 
     def __init__(self, file_to_split):
-        self.max_chunk_size = 25000000 # maximum file chunk size for upload is 25MB
+        self.max_chunk_size = 25000000  # maximum file chunk size for upload is 25MB
         self.to_split = file_to_split
-
 
     def file_size(self):
         return os.path.getsize(self.to_split)
-
 
     def get_file_chunk_size(self):
         file_size = os.path.getsize(self.to_split)
@@ -25,7 +24,6 @@ class SplitFile:
         #print(sum(chunks)) error checking
         return chunks
 
-
     def split_file(self, chunk_sizes):
         files_written = []
         with open(self.to_split, 'rb') as fr:
@@ -37,14 +35,15 @@ class SplitFile:
                     files_written.append(file_to_write)
         return files_written
 
-
-    def calc_md5_hex(self, file_to_hash):
+    @staticmethod
+    def calc_md5_hex(file_to_hash):
         hash = hashlib.md5()
         with open(file_to_hash, 'rb') as fr:
             hash.update(fr.read())
         return hash.hexdigest()
 
-    def calc_md5_b64(self, file_to_hash):
+    @staticmethod
+    def calc_md5_b64(file_to_hash):
         hash = hashlib.md5()
         with open(file_to_hash, 'rb') as fr:
             hash.update(fr.read())

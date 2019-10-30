@@ -1,17 +1,21 @@
 import requests
 import os
 import gzip
+import time
 from Bio.SeqIO.QualityIO import FastqGeneralIterator
+from split_file import SplitFile
 from config import v1_api
 from config import v2_api
 
 
 class FileUpload:
 
-    def __init__(self, auth, project_name):
+    def __init__(self, auth, project_name, samples, fastqs):
         self.authorise = auth
         self.project_name = project_name
         self.project_id = None
+        self.samples_to_upload = samples
+        self.all_fastqs = fastqs
 
     def create_basespace_project(self):
         '''
@@ -31,6 +35,83 @@ class FileUpload:
             # Update project id inside object
             self.project_id = response.json().get("Response").get("Id")
         return self.project_id
+
+    def upload_files(self):
+        # For each sample on worksheet
+        for sample_num, sample in enumerate(self.samples_to_upload, 1):
+            #log.info(f"Uploading sample {sample}") #TODO logger needs to be shared across files
+            sample_data = self.upload_sample_files(sample, self.all_fastqs)
+            # Update sample metadata
+            self.update_sample_metadata(sample, sample_num, sample_data.get("sample_id"),
+                                               sample_data.get("len_reads"), sample_data.get("read_num"))
+            # Mark file upload appsession as complete
+            self.finalise_appsession(sample_data.get("appsession_id"), sample)
+
+        # Wait to allow biosample indexes to update (5 seconds)
+        time.sleep(5)
+
+
+    def upload_sample_files(self, sample, all_fastqs):
+        # TODO Files associated with each sample here- encapsulate this for parallelisation
+        '''
+        :param upload_file:
+        :param sample:
+        :param all_fastqs:
+        :return:
+        '''
+        file_upload_info = {}
+        read_num = 0  # Cumulative tally
+        len_reads = 0  # Same across all fastqs on the run
+        # Create a sample inside the project in BaseSpace
+        sample_metadata = self.make_sample(sample)
+        sample_id = sample_metadata.get("sample_id")
+        appsession_id = sample_metadata.get("appsession_id")
+        file_upload_info["sample_id"] = sample_id
+        file_upload_info["appsession_id"] = appsession_id
+        # Pull out files associated with that particular sample
+        fastq_files = all_fastqs.get(sample)
+        # For each file associated with that sample
+        for f in fastq_files:
+            print(f"Uploading fastq {f}")
+            # Identify if read 1 or read 2
+            match_read = f.split("_")
+            read = match_read[:][-2] # Requires no underscores in file name, SMP2 v3 app also requires this
+            # Extract required fastq information from R1- assume R2 is the same- paired end
+            if read == "R1":
+                fq_metadata = self.get_fastq_metadata(f)  # Returns (max read length, number of reads in fastq)
+                if len_reads < fq_metadata.get("len_reads"):
+                    len_reads = fq_metadata.get("len_reads")
+                num_reads = fq_metadata.get("num_reads")
+                # Cumulative tally of read numbers for this sample
+                read_num += num_reads
+            # Create a file inside the sample in BaseSpace
+            file_id = self.make_file(f, sample_id)
+            # Split the file into chunks for upload
+            file_splitting = SplitFile(os.path.join(os.getcwd(), sample, f))
+            chunks = file_splitting.get_file_chunk_size()
+            file_chunks_created = file_splitting.split_file(chunks)
+            num_chunks_uploaded = 0
+            for i, f_chunk in enumerate(file_chunks_created):
+                # Calculate hash for file chunk
+                md5_b64 = file_splitting.calc_md5_b64(f_chunk)
+                md5_hex = file_splitting.calc_md5_hex(f_chunk)
+                # Populate sample with file chunks
+                chunk_num = i + 1
+                file_part_uploaded_md5 = self.upload_into_file(f_chunk, file_id, chunk_num, md5_b64)
+                # Check MD5s match before and after upload
+                if md5_hex != file_part_uploaded_md5:
+                    raise Exception(f"MD5s do not match before and after file upload for file chunk {f_chunk}")
+                # Delete file chunk after upload successful
+                os.remove(f_chunk)
+                num_chunks_uploaded += 1
+            # Check all file parts uploaded
+            if len(file_chunks_created) != num_chunks_uploaded:
+                raise Exception(f"Not all file chunks successfully uploaded for file {f}")
+            file_upload_info["len_reads"] = len_reads
+            file_upload_info["read_num"] = read_num
+            # Set file status to complete
+            #log.info(self.set_file_upload_status(file_id, "complete")) #TODO logger needs to be shared across files
+        return file_upload_info
 
     def make_sample(self, file_to_upload):
         sample_metadata = {}
@@ -127,3 +208,5 @@ class FileUpload:
         if response.status_code != 200:
             raise Exception(f"BaseSpace error. Error code {response.status_code} message {response.text}")
         return f"AppSession {appsession_id} for file {self.project_name}-{file_name} set to status Complete"
+
+
