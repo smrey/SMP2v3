@@ -10,14 +10,11 @@ import logging
 import sys
 import argparse
 import textwrap
-import time
 from parse_sample_sheet import ParseSampleSheet
 from load_configuration import LoadConfiguration
 from file_upload import FileUpload
 from launch_app import LaunchApp
 from file_downloader import FileDownloader
-from identify_files_to_download import IdentifyFiles
-from download_files import DownloadFiles
 from config import app_name
 from config import app_version
 from config import smp2_app_name
