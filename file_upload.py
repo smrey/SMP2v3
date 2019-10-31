@@ -50,7 +50,6 @@ class FileUpload:
         # Wait to allow biosample indexes to update (5 seconds)
         time.sleep(5)
 
-
     def upload_sample_files(self, sample, all_fastqs):
         # TODO Files associated with each sample here- encapsulate this for parallelisation
         '''

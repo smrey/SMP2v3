@@ -1,15 +1,50 @@
 import requests
+import os
 from config import v1_api
 from config import v2_api
+from download_files import DownloadFiles
 
 
 class IdentifyFiles:
 
-    def __init__(self, appresultid, file_extensions, auth):
+    def __init__(self, auth, worksheet, dna_sample, appresultid, file_extensions):
+        self.authorise = auth
+        self.worksheet = worksheet
+        self.dna_sample = dna_sample
         self.appresultid = appresultid
         self.file_extensions = file_extensions
         self.authorise = auth
         self.files = {}
+
+    def download_sample_files(self):
+        '''
+        :param authorisation:
+        :param worksheet_id:
+        :param sample:
+        :param appresult:
+        :param download_file_extensions:
+        :return:
+        '''
+        # Create directory for downloaded files where one does not exist
+        if not os.path.isdir(os.path.join(os.getcwd(), self.worksheet)):
+            os.mkdir(os.path.join(os.getcwd(), self.worksheet))
+        # Make sample directory
+        if not os.path.isdir(os.path.join(os.getcwd(), self.worksheet, self.dna_sample)):
+            os.mkdir(os.path.join(os.getcwd(), self.worksheet, self.dna_sample))
+        all_file_metadata = self.get_files_from_appresult()
+        # Iterate over identified files of required file types
+        file_download_success = []
+        for fl in all_file_metadata:
+            file_download = DownloadFiles(fl, os.path.join(os.getcwd(), self.worksheet, self.dna_sample),
+                                          self.authorise)
+            file_download_success.append(file_download.download_files())
+        if len(all_file_metadata) == len(file_download_success):
+            file_dl_result = f"All files successfully downloaded for sample {self.dna_sample}, " \
+                             f"appresult {self.appresultid}"
+        else:
+            file_dl_result = f"Files may be missing for sample {self.dna_sample}, " \
+                             f"appresult {self.appresultid}. Please check."
+        return file_dl_result
 
     def get_files_from_appresult(self):
         url = f"{v1_api}/appresults/{self.appresultid}/files/"

@@ -12,7 +12,7 @@ class DownloadFiles:
         self.authorise = auth
 
     def download_files(self):
-        file_name = self.file_info.get("Name") #TODO Change file name to remove worksheetid from beginning before -
+        file_name = self.file_info.get("Name")
         file_id = self.file_info.get("Id")
         # TODO multipart download if required- chunk file and reassemble
         url = f"{v1_api}/files/{file_id}/content/"
