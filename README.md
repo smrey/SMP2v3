@@ -1,9 +1,16 @@
 # CRUK Pipeline
 ***
 ## Introduction
-Tool to generate an XML report of the CRUK analysis output for sending to CRUK. 
+Pipeline to 
 
-Also makes a PDF document of the results with the details of the checkers and authoriser.
+Processes:
+
+* Identify fastqs on an Illumina SampleSheet.csv
+* Pair samples according to the common identifier for DNA and RNA from the same source in the pairs variable 
+* Launch the Illumina TruSight Tumor 170 app for each pair
+* Once the TruSight 
+
+
 ***
 ## Installation
 This software uses Python 3.7.
