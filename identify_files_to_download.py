@@ -1,7 +1,10 @@
 import requests
 import os
+import logging
 from config import v1_api
 from download_files import DownloadFiles
+
+log = logging.getLogger("cruk_smp")
 
 
 class IdentifyFiles:

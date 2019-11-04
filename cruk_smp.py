@@ -10,11 +10,12 @@ import logging
 import sys
 import argparse
 import textwrap
+import json
 from parse_sample_sheet import ParseSampleSheet
-from load_configuration import LoadConfiguration
 from file_upload import FileUpload
 from launch_app import LaunchApp
 from file_downloader import FileDownloader
+from load_configuration import get_authentication_token
 from config import app_name
 from config import app_version
 from config import smp2_app_name
@@ -85,29 +86,16 @@ def get_args():
 
 class CrukSmp:
     def __init__(self):
-        self.config = LoadConfiguration(args.path_to_config_file)
-        #self.authorisation = self.config.get_authentication_token
-        self.worksheet = "" # TODO finish work here- required params for resuming
+        #  Load the config file containing user-specific information and obtain the authentication token
+        self.authentication_token = get_authentication_token(args.path_to_config_file)
+        self.worksheet = ""
         self.sample_pairs = ""
-
 
     def main(self):
         '''
         :return:
         '''
-        if args.tst170:
-            # Resume at launch of TST170 app
-            print("trigger tst170")
-        elif args.smp2:
-            # Resume at launch of SMP2v3 app
-            print("trigger smp2")
-        elif args.dl_files:
-            print("trigger download")
-
-        #TODO Stuff required for every program execution
-        # Load command line arguments- TODO WORK ON WHERE
-
-
+        # Always do these steps regardless of option
         # Parse sample sheet to extract relevant sample information
         my_sample_sheet = ParseSampleSheet(os.getcwd())
         my_sample_sheet.read_in_sample_sheet()
@@ -118,58 +106,93 @@ class CrukSmp:
         # Identify the worksheet number which will be used as the project name in BaseSpace
         worksheet = my_sample_sheet.identify_worksheet()
 
-        # Load the config file containing user-specific information and obtain the authentication token
-        #config = LoadConfiguration(config_file_path)
-        #authorisation = config.get_authentication_token()
-
         # Load and parse out variables from variables files associated with each sample
         all_variables = my_sample_sheet.load_all_variables(samples_to_upload, os.getcwd())
 
         # Pair samples- DNA sample is key, RNA sample to look up- if No RNA sample, it is None
         sample_pairs = my_sample_sheet.create_sample_pairs(all_variables)
-        # Write out sample pairs to log file for checking if needed TODO WHERE
+        # Write out sample pairs to log file for checking if needed
         log.warning(f"sample pairs are {sample_pairs}")
 
         # Locate the fastqs associated with all samples
         all_fastqs = my_sample_sheet.locate_all_fastqs(samples_to_upload, os.getcwd())
 
         # Create a project in BaseSpace- will not create if it already exists, but will still return project id
-        upload = FileUpload(self.config.get_authentication_token, worksheet, samples_to_upload, all_fastqs)
+        upload = FileUpload(self.authentication_token, worksheet, samples_to_upload, all_fastqs)
         project = upload.create_basespace_project()
         log.info(f"Project {worksheet} created")
-        log.warning(f"Project id from project name {worksheet} is {project}")
+        log.warning(f"Project id for project name {worksheet} is {project}")
 
-        # Upload fastq files
-        upload.upload_files()
+        # If whole pipeline required then upload fastq files
+        if not args.tst170 or not args.smp2 or not args.dl_files:
+            # Upload fastq files
+            print(f"uploading fastq files for all samples")
+            upload.upload_files()
 
-        # Launch application
-        # Create launch app object for TST 170
-        # IMPORTANT NOTE: Only processes paired data
-        launch_tst = LaunchApp(self.config.get_authentication_token, worksheet, project, app_name,
+        # Create launch app object for TST170 app
+        launch_tst = LaunchApp(self.authentication_token, worksheet, project, app_name,
                                app_version, sample_pairs)
 
-        tst_170 = launch_tst.launch_tst170_pairs()  # TODO Dump data to temp file (was tst170 items)
+        # If resuming from TST170 required or full pipeline- launch the TST170 app
+        if not args.smp2 or not args.dl_files:
+            # Launch TST170 application for each pair in turn
+            # IMPORTANT NOTE: Only processes paired data
+            tst_170 = launch_tst.launch_tst170_pairs()
 
-        # TODO- for resuming from smp2 applaunch and from file download will need to load the launchapp object
-        # Create launch app object for SMP2 v3
-        launch_smp = LaunchApp(self.config.get_authentication_token, worksheet, project, smp2_app_name,
-                               smp2_app_version, sample_pairs, tst_170)
-        # Poll the tst 170 appsessions until completion, then launch smp2 app
-        smp_appsession = launch_smp.poll_tst170_launch_smp2()
+            # Dump data to file
+            with open(os.path.join(os.getcwd(), "tst_170.json", 'w')) as t:
+                json.dump(tst_170, t)
+
+        # If resuming from SMP2v3 load in required TST170 data from file
+        else:
+            try:
+                tst_170 = json.loads(os.path.join(os.getcwd(), "tst_170.json"))
+            except FileNotFoundError:
+                raise FileNotFoundError(f"Could not find file tst_170.json. Cannot resume pipeline from SMP2 step."
+                                        f"Please delete TST170 analysis in BaseSpace and resume pipeline from"
+                                        f"TST170 stage.")
+
+        # If resuming from SMP2v3 required, resuming from TST170 required or full pipeline- launch the SMP2 app
+        if not args.dl_files:
+            # Create launch app object for SMP2 v3 if not just downloading files- poll TST170 and when complete
+            # launch SMP2
+            launch_smp = LaunchApp(self.authentication_token, worksheet, project, smp2_app_name,
+                                   smp2_app_version, sample_pairs, tst_170)
+            # Poll the tst 170 appsessions until completion, then launch smp2 app
+            smp_appsession = launch_smp.poll_tst170_launch_smp2()
+
+            # Dump data to file
+            with open(os.path.join(os.getcwd(), "smp.json", 'w')) as s:
+                json.dump(smp_appsession, s)
+
+        # If downloading files from a completed SMP2 app required
+        # Create a LaunchApp object for smp2 app if flag to only download files is set- allows for polling of SMP2
+        if args.dl_files:
+            # Load data in required smp2 data from file
+            try:
+                smp = json.loads(os.path.join(os.getcwd(), "smp.json"))
+            except FileNotFoundError:
+                raise FileNotFoundError(f"Could not find file smp.json. Cannot resume pipeline from download step."
+                                        f"Please delete SMP2 analysis in BaseSpace and resume pipeline from"
+                                        f"SMP2 stage.")
+            launch_smp = LaunchApp(self.authentication_token, worksheet, project, smp2_app_name,
+                                   smp2_app_version, sample_pairs, None, smp)  # None as tst170 app data not required
+
+
         # Poll the smp appsessions until completion
         smp_appresults = launch_smp.poll_smp2()
 
-        # Download all required files
-        file_downloader = FileDownloader(self.config.get_authentication_token, smp_appresults, worksheet)
+        # Download all required files- every step requires
+        file_downloader = FileDownloader(self.authentication_token, smp_appresults, worksheet)
 
 
 if __name__ == '__main__':
 
     __version__ = '2.0.0'
-    __updated__ = "01/11/2019"
+    __updated__ = "04/11/2019"
 
     # Set up logger
-    log = logging.getLogger(__name__) # TODO Share this logger across the project
+    log = logging.getLogger("cruk_smp")
     log.setLevel(logging.DEBUG)
     handler_out = logging.StreamHandler(sys.stdout)
     handler_out.setLevel(logging.INFO)
@@ -180,6 +203,7 @@ if __name__ == '__main__':
     log.addHandler(handler_out)
     log.addHandler(handler_err)
 
+    # Load command line arguments
     args = get_args()
     cr = CrukSmp()
     cr.main()

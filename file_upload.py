@@ -2,10 +2,13 @@ import requests
 import os
 import gzip
 import time
+import logging
 from Bio.SeqIO.QualityIO import FastqGeneralIterator
 from split_file import SplitFile
 from config import v1_api
 from config import v2_api
+
+log = logging.getLogger("cruk_smp")
 
 
 class FileUpload:
@@ -39,7 +42,7 @@ class FileUpload:
     def upload_files(self):
         # For each sample on worksheet
         for sample_num, sample in enumerate(self.samples_to_upload, 1):
-            #log.info(f"Uploading sample {sample}") #TODO logger needs to be shared across files
+            log.info(f"Uploading sample {sample}")
             sample_data = self.upload_sample_files(sample, self.all_fastqs)
             # Update sample metadata
             self.update_sample_metadata(sample, sample_num, sample_data.get("sample_id"),
@@ -51,7 +54,7 @@ class FileUpload:
         time.sleep(5)
 
     def upload_sample_files(self, sample, all_fastqs):
-        # TODO Files associated with each sample here- encapsulate this for parallelisation
+        # Files associated with each sample here
         '''
         :param upload_file:
         :param sample:
@@ -71,7 +74,7 @@ class FileUpload:
         fastq_files = all_fastqs.get(sample)
         # For each file associated with that sample
         for f in fastq_files:
-            print(f"Uploading fastq {f}")
+            log.info(f"Uploading fastq {f}")
             # Identify if read 1 or read 2
             match_read = f.split("_")
             read = match_read[:][-2] # Requires no underscores in file name, SMP2 v3 app also requires this
@@ -109,7 +112,7 @@ class FileUpload:
             file_upload_info["len_reads"] = len_reads
             file_upload_info["read_num"] = read_num
             # Set file status to complete
-            #log.info(self.set_file_upload_status(file_id, "complete")) #TODO logger needs to be shared across files
+            log.info(self.set_file_upload_status(file_id, "complete"))
         return file_upload_info
 
     def make_sample(self, file_to_upload):

@@ -2,9 +2,12 @@ import requests
 import json
 import os
 import datetime
+import logging
 from poll_appsession_status import PollAppsessionStatus
 from config import v1_api
 from config import v2_api
+
+log = logging.getLogger("cruk_smp")
 
 
 class LaunchApp:
@@ -32,7 +35,7 @@ class LaunchApp:
             tst_170_launch = self.launch_tst170_analysis(dna_sample)
             tst_170[dna_sample] = tst_170_launch
             # Write out to log file to provide data required to resume process from this point
-            #log.warning(f"{dna_sample}: {tst_170_launch}") #TODO logger needs to be shared across files
+            log.warning(f"{dna_sample}: {tst_170_launch}")
         return tst_170
 
     def launch_tst170_analysis(self, dna_sample):
@@ -56,26 +59,26 @@ class LaunchApp:
         self.get_app_id()
 
         # Launch TST 170 application for DNA and RNA pair
-        #log.info(f"Launching {app_name} {app_version} for {dna_sample} and {rna_sample}") #TODO logger needs to be shared across files
+        log.info(f"Launching {self.app_name} {self.app_version} for {dna_sample} and {rna_sample}")
         appsession = self.launch_application(app_config)
-        tst_170 = {"appsession": appsession, "dna_biosample_id": dna_biosample_id,
+        tst_170_analysis = {"appsession": appsession, "dna_biosample_id": dna_biosample_id,
                                     "rna_biosample_id": rna_biosample_id}
-        return tst_170
+        return tst_170_analysis
 
     def poll_tst170_launch_smp2(self):
         # Poll appsession status of launched TST 170 app- polling runs until appsession is complete then launch SMP2 v3 app
         smp_appsession = {}
         for dna_sample, tst_values in self.tst_170.items():
             rna_sample = self.sample_pairs.get(dna_sample)
-            #log.info(f"Polling status of TST 170 application, appsession {tst_values.get('appsession')}") #TODO logger needs to be shared across files
+            log.info(f"Polling status of TST 170 application, appsession {tst_values.get('appsession')}")
             polling = PollAppsessionStatus(self.authorise, tst_values.get("appsession"))
             poll_result = polling.poll()  # Poll status of appsession
-            #log.info(f" TST 170 appsession {appsession} for samples {dna_sample} and {rna_sample} has finished with "
-                     #f"status {poll_result}") #TODO logger needs to be shared across files
+            log.info(f" TST 170 appsession {tst_values.get('appsession')} for samples {dna_sample} and {rna_sample} "
+                     f"has finished with status {poll_result}")
 
             if poll_result == "Fail":
-                #log.info(f"TST170 app for samples {dna_sample} and {rna_sample} has failed to"
-                        #f"complete. Investigate further through the BaseSpace website.") #TODO logger needs to be shared across files
+                log.info(f"TST170 app for samples {dna_sample} and {rna_sample} has failed to"
+                        f"complete. Investigate further through the BaseSpace website.")
                 # Move on to the next pair's appsession
                 continue
 
@@ -83,8 +86,8 @@ class LaunchApp:
             # Find specific application ID for application and version number of SMP2 app
             self.get_app_group_id()
             self.get_app_id()
-            #log.info(f"Launching {smp2_app_name} {smp2_app_version} for {dna_sample} and "
-                     #f"{sample_pairs.get(dna_sample)}") #TODO logger needs to be shared across files
+            log.info(f"Launching {self.app_name} {self.app_version} for {dna_sample} and "
+                     f"{self.sample_pairs.get(dna_sample)}")
             smp_appsession[dna_sample] = self.launch_smp_analysis(tst_values)
             self.smp = smp_appsession
         return self.smp
@@ -109,11 +112,11 @@ class LaunchApp:
         # Poll appsession status of launched SMP2 v3 app- polling runs until appsession is complete then download files
         for dna_sample, smp_appsession in self.smp.items():
             rna_sample = self.sample_pairs.get(dna_sample)
-            #log.info(f"Polling status of SMP2 v3 application, appsession {smp_appsession}") #TODO logger needs to be shared across files
+            log.info(f"Polling status of SMP2 v3 application, appsession {smp_appsession}")
             polling = PollAppsessionStatus(self.authorise, smp_appsession)
             poll_result = polling.poll()  # Poll status of appsession
-            #log.info(f" SMP2 v3 appsession {smp_appsession} for sample {dna_sample} and {rna_sample} has finished with "
-                     #f"status {poll_result}") #TODO logger needs to be shared across files
+            log.info(f" SMP2 v3 appsession {smp_appsession} for sample {dna_sample} and {rna_sample} has finished with "
+                     f"status {poll_result}") #TODO logger needs to be shared across files
             appresults = polling.find_appresults()
             if len(appresults != 1):
                 raise Exception(f"Expected 1 appresult for appsession {smp_appsession}, dna sample {dna_sample} "

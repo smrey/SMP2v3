@@ -1,5 +1,8 @@
+import logging
 from identify_files_to_download import IdentifyFiles
 from config import download_file_extensions
+
+log = logging.getLogger("cruk_smp")
 
 
 class FileDownloader:
@@ -17,13 +20,13 @@ class FileDownloader:
         for dna_sample, appresult_dict in self.appresults.items():
             appresult = appresult_dict.get("appresult")
             if appresult_dict.get("status") == "Fail":
-                #log.info(f"SMP2 v3 app for dna sample {dna_sample} has failed to "#TODO logger needs to be shared across files
-                        #f"complete. Investigate further through the BaseSpace website.")
+                log.info(f"SMP2 v3 app for dna sample {dna_sample} has failed to "
+                        f"complete. Investigate further through the BaseSpace website.")
                 identify_files = IdentifyFiles(self.auth, self.worksheet, dna_sample, appresult, [".log"])
                 identify_files.download_sample_files()
-            #log.info(f"Downloading results for sample {dna_sample}") #TODO logger needs to be shared across files
+            log.info(f"Downloading results for sample {dna_sample}")
             identify_files = IdentifyFiles(self.auth, self.worksheet, dna_sample, appresult,
                                            ",.".join(self.download_file_extensions))
-            print(identify_files.download_sample_files()) #TODO ??#TODO logger needs to be shared across files (log.info)
+            log.info(identify_files.download_sample_files())
         return "Files downloaded for all samples and appresults"
 
