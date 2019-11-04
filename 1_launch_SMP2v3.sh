@@ -99,7 +99,7 @@ if [ $numSamplesInProject -eq $numSamplesWithFqs ]; then
     source /home/transfer/miniconda3/bin/activate SMP2v3
 
     # Run CRUK SMP2v3 pipeline
-    echo python CRUK_SMPv3.py /data/diagnostics/pipelines/CRUK/CRUK-"$version"/access/
+    echo python cruk_smp.py /data/diagnostics/pipelines/CRUK/CRUK-"$version"/access/
 
     source /home/transfer/miniconda3/bin/deactivate
 
