@@ -11,6 +11,7 @@ import sys
 import argparse
 import textwrap
 import json
+import pandas as pd
 from parse_sample_sheet import ParseSampleSheet
 from file_upload import FileUpload
 from launch_app import LaunchApp
@@ -102,6 +103,7 @@ class CrukSmp:
 
         # Pull out a series of samples to upload to BaseSpace
         samples_to_upload = my_sample_sheet.identify_samples()
+        #samples_to_upload = pd.Series(["insert", "sample", "list"]) #TODO temp variable for a subset of samples
 
         # Identify the worksheet number which will be used as the project name in BaseSpace
         worksheet = my_sample_sheet.identify_worksheet()
