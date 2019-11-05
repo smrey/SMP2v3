@@ -116,7 +116,7 @@ class LaunchApp:
             log.info(f" SMP2 v3 appsession {smp_appsession} for sample {dna_sample} and {rna_sample} has finished with "
                      f"status {poll_result}")
             appresults = polling.find_appresults()
-            if len(appresults != 1):
+            if len(appresults) != 1:
                 raise Exception(f"Expected 1 appresult for appsession {smp_appsession}, dna sample {dna_sample} "
                                 f"but found {len(appresults)}. File path to results could not be determined- "
                                 f"please download files manually from BaseSpace")

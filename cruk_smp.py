@@ -188,12 +188,13 @@ class CrukSmp:
 
         # Download all required files- every step requires
         file_downloader = FileDownloader(self.authentication_token, smp_appresults, worksheet)
+        file_downloader.download_files()
 
 
 if __name__ == '__main__':
 
     __version__ = '2.0.0'
-    __updated__ = "04/11/2019"
+    __updated__ = "07/11/2019"
 
     # Set up logger
     log = logging.getLogger("cruk_smp")
