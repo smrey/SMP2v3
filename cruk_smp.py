@@ -53,7 +53,7 @@ def get_args():
     # Add arguments
     # REQUIRED: Path to config file containing authorisation information
     argument_parser.add_argument(
-        'path_to_config_file', action='store',
+        '-c', '--path_to_config_file', action='store',
         help=textwrap.dedent(
             '''
             File path to config file location containing authentication credentials. Set up according to template
@@ -126,7 +126,7 @@ class CrukSmp:
         log.warning(f"Project id for project name {worksheet} is {project}")
 
         # If whole pipeline required then upload fastq files
-        if not args.tst170 or not args.smp2 or not args.dl_files:
+        if not args.tst170 and not args.smp2 and not args.dl_files:
             # Upload fastq files
             print(f"uploading fastq files for all samples")
             upload.upload_files()
@@ -136,7 +136,7 @@ class CrukSmp:
                                app_version, sample_pairs)
 
         # If resuming from TST170 required or full pipeline- launch the TST170 app
-        if not args.smp2 or not args.dl_files:
+        if not args.smp2 and not args.dl_files:
             # Launch TST170 application for each pair in turn
             # IMPORTANT NOTE: Only processes paired data
             tst_170 = launch_tst.launch_tst170_pairs()

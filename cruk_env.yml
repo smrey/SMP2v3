@@ -1,4 +1,4 @@
-name: SMP2v3
+name: cruk
 channels:
   - defaults
 dependencies:
