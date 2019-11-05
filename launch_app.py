@@ -75,13 +75,11 @@ class LaunchApp:
             poll_result = polling.poll()  # Poll status of appsession
             log.info(f" TST 170 appsession {tst_values.get('appsession')} for samples {dna_sample} and {rna_sample} "
                      f"has finished with status {poll_result}")
-
             if poll_result == "Fail":
                 log.info(f"TST170 app for samples {dna_sample} and {rna_sample} has failed to"
                         f"complete. Investigate further through the BaseSpace website.")
                 # Move on to the next pair's appsession
                 continue
-
             # Launch SMP2v3 app as each pair completes analysis with the TST170 app
             # Find specific application ID for application and version number of SMP2 app
             self.get_app_group_id()
@@ -116,7 +114,7 @@ class LaunchApp:
             polling = PollAppsessionStatus(self.authorise, smp_appsession)
             poll_result = polling.poll()  # Poll status of appsession
             log.info(f" SMP2 v3 appsession {smp_appsession} for sample {dna_sample} and {rna_sample} has finished with "
-                     f"status {poll_result}") #TODO logger needs to be shared across files
+                     f"status {poll_result}")
             appresults = polling.find_appresults()
             if len(appresults != 1):
                 raise Exception(f"Expected 1 appresult for appsession {smp_appsession}, dna sample {dna_sample} "

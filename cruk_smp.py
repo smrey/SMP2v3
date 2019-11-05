@@ -145,10 +145,11 @@ class CrukSmp:
             with open(os.path.join(os.getcwd(), "tst_170.json"), 'w') as t:
                 json.dump(tst_170, t)
 
-        # If resuming from SMP2v3 load in required TST170 data from file
-        else:
+        # If resuming from SMP2v3 launch load in required TST170 data from file
+        elif args.smp2:
             try:
-                tst_170 = json.loads(os.path.join(os.getcwd(), "tst_170.json"))
+                with open(os.path.join(os.getcwd(), "tst_170.json")) as ts:
+                    tst_170 = json.load(ts)
             except FileNotFoundError:
                 raise FileNotFoundError(f"Could not find file tst_170.json. Cannot resume pipeline from SMP2 step."
                                         f"Please delete TST170 analysis in BaseSpace and resume pipeline from"
@@ -172,7 +173,8 @@ class CrukSmp:
         if args.dl_files:
             # Load data in required smp2 data from file
             try:
-                smp = json.loads(os.path.join(os.getcwd(), "smp.json"))
+                with open(os.path.join(os.getcwd(), "smp.json")) as sm:
+                    smp = json.load(sm)
             except FileNotFoundError:
                 raise FileNotFoundError(f"Could not find file smp.json. Cannot resume pipeline from download step."
                                         f"Please delete SMP2 analysis in BaseSpace and resume pipeline from"
