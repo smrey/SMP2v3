@@ -142,7 +142,7 @@ class CrukSmp:
             tst_170 = launch_tst.launch_tst170_pairs()
 
             # Dump data to file
-            with open(os.path.join(os.getcwd(), "tst_170.json", 'w')) as t:
+            with open(os.path.join(os.getcwd(), "tst_170.json"), 'w') as t:
                 json.dump(tst_170, t)
 
         # If resuming from SMP2v3 load in required TST170 data from file
@@ -164,7 +164,7 @@ class CrukSmp:
             smp_appsession = launch_smp.poll_tst170_launch_smp2()
 
             # Dump data to file
-            with open(os.path.join(os.getcwd(), "smp.json", 'w')) as s:
+            with open(os.path.join(os.getcwd(), "smp.json"), 'w') as s:
                 json.dump(smp_appsession, s)
 
         # If downloading files from a completed SMP2 app required
