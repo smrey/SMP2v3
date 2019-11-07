@@ -187,8 +187,6 @@ class CrukSmp:
         smp_appresults = launch_smp.poll_smp2()
 
         # Download all required files- every step requires this
-
-
         file_download = FileDownloader(self.authentication_token, smp_appresults, worksheet)
         file_download.download_files()
 
