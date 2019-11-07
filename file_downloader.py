@@ -18,10 +18,10 @@ class FileDownloader:
         # Download files within appresults for which the SMP2 app successfully completed
         # Iterate over all appresults- one per dna sample successfully completed
         for dna_sample, appresult_dict in self.appresults.items():
-            appresult = appresult_dict.get("appresult")
+            appresult = appresult_dict.get("appresults")
             if appresult_dict.get("status") == "Fail":
                 log.info(f"SMP2 v3 app for dna sample {dna_sample} has failed to "
-                        f"complete. Investigate further through the BaseSpace website.")
+                         f"complete. Investigate further through the BaseSpace website.")
                 identify_files = IdentifyFiles(self.auth, self.worksheet, dna_sample, appresult, [".log"])
                 identify_files.download_sample_files()
             log.info(f"Downloading results for sample {dna_sample}")
@@ -29,4 +29,3 @@ class FileDownloader:
                                            ",.".join(self.download_file_extensions))
             log.info(identify_files.download_sample_files())
         return "Files downloaded for all samples and appresults"
-
