@@ -5,9 +5,10 @@ import time
 import logging
 import concurrent.futures
 import threading
+import queue
 import numpy as np
 from Bio.SeqIO.QualityIO import FastqGeneralIterator
-from Bio import SeqIO
+import fastq_data
 from split_file import SplitFile
 from config import v1_api
 from config import v2_api
@@ -55,7 +56,7 @@ class FileUpload:
     def upload_files(self):
         # For each sample on worksheet
         for sample_num, sample in enumerate(self.samples_to_upload, 1):
-            # TODO Parallelise here- all this
+            # TODO Parallelise here?- all this
             #with concurrent.futures.ThreadPoolExecutor(max_workers=6) as executor:
                 #executor.map(self.upload_files_threaded(sample, sample_num))
             self.upload_files_threaded(sample, sample_num)
@@ -71,8 +72,8 @@ class FileUpload:
         :return:
         '''
         file_upload_info = {}
-        read_num = 0  # Cumulative tally
-        len_reads = 0  # Same across all fastqs on the run
+        num = []  # Cumulative tally
+        len = []  # Same across all fastqs on the run
         # Create a sample inside the project in BaseSpace
         ##sample_metadata = self.make_sample(sample)
         ##sample_id = sample_metadata.get("sample_id")
@@ -83,19 +84,17 @@ class FileUpload:
         fastq_files = all_fastqs.get(sample)
         # For each file associated with that sample
         for f in fastq_files:
+            # TODO Speed increase here- queue to return values from threading
+            fastq_threaded = fastq_data.get_fastq_metadata
             log.info(f"Uploading fastq {f}")
             # Identify if read 1 or read 2
             match_read = f.split("_")
             read = match_read[:][-2]  # Requires no underscores in file name, SMP2 v3 app also requires this
             # Extract required fastq information from R1- assume R2 is the same- paired end
-            if read == "R1":
-            # TODO Speed increase here
-                fq_metadata = self.get_fastq_metadata(f)  # Returns (max read length, number of reads in fastq)
-                if len_reads < fq_metadata.get("len_reads"):
-                    len_reads = fq_metadata.get("len_reads")
-                num_reads = fq_metadata.get("num_reads")
-                # Cumulative tally of read numbers for this sample
-                read_num += num_reads
+            if read == "R1": #TODO figure out how tis fits with new class
+                ##fq_metadata = self.get_fastq_metadata(f)  # Returns (max read length, number of reads in fastq)
+                ##len.append(fq_metadata.get("len_reads"))
+                ##num.append(fq_metadata.get("num_reads"))
             # Create a file inside the sample in BaseSpace
             ##file_id = self.make_file(f, sample_id)
             # Split the file into chunks for upload
@@ -127,6 +126,8 @@ class FileUpload:
             # Set file status to complete
             log.info(self.set_file_upload_status(file_id, "complete"))
             '''
+            print(max(len))
+            print(sum(num))
         return file_upload_info
 
     def make_sample(self, file_to_upload):
@@ -153,7 +154,9 @@ class FileUpload:
                 len_reads = len(fq_seq)
                 return len_reads
 
-    def get_fastq_metadata(self, fastq):
+    @staticmethod
+    #TODO remove after parallelised
+    def get_fastq_metadata(fastq):
         read_metadata = {}
         # Open fastq
         with gzip.open(fastq, "rt") as fh_r1:
