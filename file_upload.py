@@ -3,7 +3,11 @@ import os
 import gzip
 import time
 import logging
+import concurrent.futures
+import threading
+import numpy as np
 from Bio.SeqIO.QualityIO import FastqGeneralIterator
+from Bio import SeqIO
 from split_file import SplitFile
 from config import v1_api
 from config import v2_api
@@ -39,17 +43,22 @@ class FileUpload:
             self.project_id = response.json().get("Response").get("Id")
         return self.project_id
 
+    def upload_files_threaded(self, sample, sample_num):
+        log.info(f"Uploading sample {sample}")
+        sample_data = self.upload_sample_files(sample, self.all_fastqs)
+        # Update sample metadata
+        self.update_sample_metadata(sample, sample_num, sample_data.get("sample_id"),
+                                    sample_data.get("len_reads"), sample_data.get("read_num"))
+        # Mark file upload appsession as complete
+        self.finalise_appsession(sample_data.get("appsession_id"), sample)
+
     def upload_files(self):
         # For each sample on worksheet
         for sample_num, sample in enumerate(self.samples_to_upload, 1):
-            log.info(f"Uploading sample {sample}")
-            sample_data = self.upload_sample_files(sample, self.all_fastqs)
-            # Update sample metadata
-            self.update_sample_metadata(sample, sample_num, sample_data.get("sample_id"),
-                                               sample_data.get("len_reads"), sample_data.get("read_num"))
-            # Mark file upload appsession as complete
-            self.finalise_appsession(sample_data.get("appsession_id"), sample)
-
+            # TODO Parallelise here- all this
+            #with concurrent.futures.ThreadPoolExecutor(max_workers=6) as executor:
+                #executor.map(self.upload_files_threaded(sample, sample_num))
+            self.upload_files_threaded(sample, sample_num)
         # Wait to allow biosample indexes to update (5 seconds)
         time.sleep(5)
 
@@ -65,11 +74,11 @@ class FileUpload:
         read_num = 0  # Cumulative tally
         len_reads = 0  # Same across all fastqs on the run
         # Create a sample inside the project in BaseSpace
-        sample_metadata = self.make_sample(sample)
-        sample_id = sample_metadata.get("sample_id")
-        appsession_id = sample_metadata.get("appsession_id")
-        file_upload_info["sample_id"] = sample_id
-        file_upload_info["appsession_id"] = appsession_id
+        ##sample_metadata = self.make_sample(sample)
+        ##sample_id = sample_metadata.get("sample_id")
+        ##appsession_id = sample_metadata.get("appsession_id")
+        ##file_upload_info["sample_id"] = sample_id
+        ##file_upload_info["appsession_id"] = appsession_id
         # Pull out files associated with that particular sample
         fastq_files = all_fastqs.get(sample)
         # For each file associated with that sample
@@ -77,9 +86,10 @@ class FileUpload:
             log.info(f"Uploading fastq {f}")
             # Identify if read 1 or read 2
             match_read = f.split("_")
-            read = match_read[:][-2] # Requires no underscores in file name, SMP2 v3 app also requires this
+            read = match_read[:][-2]  # Requires no underscores in file name, SMP2 v3 app also requires this
             # Extract required fastq information from R1- assume R2 is the same- paired end
             if read == "R1":
+            # TODO Speed increase here
                 fq_metadata = self.get_fastq_metadata(f)  # Returns (max read length, number of reads in fastq)
                 if len_reads < fq_metadata.get("len_reads"):
                     len_reads = fq_metadata.get("len_reads")
@@ -87,8 +97,9 @@ class FileUpload:
                 # Cumulative tally of read numbers for this sample
                 read_num += num_reads
             # Create a file inside the sample in BaseSpace
-            file_id = self.make_file(f, sample_id)
+            ##file_id = self.make_file(f, sample_id)
             # Split the file into chunks for upload
+            '''
             file_splitting = SplitFile(os.path.join(os.getcwd(), sample, f))
             chunks = file_splitting.get_file_chunk_size()
             file_chunks_created = file_splitting.split_file(chunks)
@@ -99,9 +110,11 @@ class FileUpload:
                 md5_hex = file_splitting.calc_md5_hex(f_chunk)
                 # Populate sample with file chunks
                 chunk_num = i + 1
+                #with concurrent.futures.ThreadPoolExecutor(max_workers=6) as executor:
+                    #executor.map(self.upload_into_file(f_chunk, file_id, chunk_num, md5_b64))
                 file_part_uploaded_md5 = self.upload_into_file(f_chunk, file_id, chunk_num, md5_b64)
                 # Check MD5s match before and after upload
-                if md5_hex != file_part_uploaded_md5:
+                if md5_hex != file_part_uploaded_md5: #TODO Move elsewhere
                     raise Exception(f"MD5s do not match before and after file upload for file chunk {f_chunk}")
                 # Delete file chunk after upload successful
                 os.remove(f_chunk)
@@ -113,6 +126,7 @@ class FileUpload:
             file_upload_info["read_num"] = read_num
             # Set file status to complete
             log.info(self.set_file_upload_status(file_id, "complete"))
+            '''
         return file_upload_info
 
     def make_sample(self, file_to_upload):
@@ -130,7 +144,8 @@ class FileUpload:
         sample_metadata["appsession_id"] = response.json().get("Response").get("AppSession").get("Id")
         return sample_metadata
 
-    def get_read_length_one_fq(self, fq_file):
+    @staticmethod
+    def get_read_length_one_fq(fq_file):
         with gzip.open(fq_file, "rt") as fh:
             fq = FastqGeneralIterator(fh)
             for fq_id, fq_seq, fq_qual in fq:
@@ -145,12 +160,26 @@ class FileUpload:
         # Open fastq
         with gzip.open(fastq, "rt") as fh_r1:
             fq_r1 = FastqGeneralIterator(fh_r1)
+            #print(len(list(fq_r1)))
+            #print(fq_r1)
+            #fq_r1_array = np.asarray(fq_r1)
+            #print(fq_r1_array.size)
+            #print(fq_r1_array)
+            #print(np.array([len(record[1]) for record in FastqGeneralIterator(fh_r1)]))
+            #fq_r1_array = np.fromiter(fq_r1, str, count=-1)
+            #fq_r1_array = np.vstack(fq_r1)
+            fq_r1_array = np.array(list(fh_r1))
+            '''
             for index, (fq_id, fq_seq, fq_qual) in enumerate(fq_r1, 1):  # Python is zero indexed
+                print(fq_id)
                 # Read length
                 if len(fq_seq) > len_reads:
                     len_reads = len(fq_seq)
                 # Number of reads
                 num_reads = index
+        #print(num_reads)
+        '''
+        exit()
         read_metadata["len_reads"] = len_reads
         read_metadata["num_reads"] = num_reads
         return read_metadata
