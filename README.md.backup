@@ -1,8 +1,9 @@
 # CRUK Pipeline
 ***
 ## Introduction
-Pipeline to support the analysis of SMP2v3 samples using apps in the Illumina BaseSpace environment.
-### Overview of Steps:
+Pipeline to upload fastqs
+
+Overview of Steps:
 
 * Identify fastqs for the samples on an Illumina SampleSheet.csv
 * Pair samples according to the common identifier for DNA and RNA from the same source in the pairs variable 
