@@ -55,7 +55,7 @@ bash 1_launch_SMP2v3.sh
 The code is expecting a directory structure where fastqs and a variables file created by ```https://github.com/AWGL/MakeVariableFiles``` are located within directories named with the sample file name, and the sample sheet ```SampleSheet.csv``` is in the same directory as all of the scripts.
 
 e.g.
-![](dir.png)
+![](../../../../Desktop/Clipboard-1.png)
 ### Default options
 The pipeline should be automatically initiated after sequencing by IlluminaQC (see https://github.com/AWGL/IlluminaQC). This launches the script ```1_launch_SMP2v3.sh``` which aggregates QC data for all samples on the run and launches the script ```cruk_smp.py``` with the default location for the config file on the cluster cvx-gen01.
 
