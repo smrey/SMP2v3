@@ -24,8 +24,9 @@ class FileDownloader:
                          f"complete. Investigate further through the BaseSpace website.")
                 identify_files = IdentifyFiles(self.auth, self.worksheet, dna_sample, appresult, [".log"])
                 identify_files.download_sample_files()
-            log.info(f"Downloading results for sample {dna_sample}")
-            identify_files = IdentifyFiles(self.auth, self.worksheet, dna_sample, appresult,
+            else:
+                log.info(f"Downloading results for sample {dna_sample}")
+                identify_files = IdentifyFiles(self.auth, self.worksheet, dna_sample, appresult,
                                            ",.".join(self.download_file_extensions))
-            log.info(identify_files.download_sample_files())
+                log.info(identify_files.download_sample_files())
         return "Files downloaded for all samples and appresults"
