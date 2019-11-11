@@ -11,8 +11,7 @@ import sys
 import argparse
 import textwrap
 import json
-import pandas as pd
-from parse_sample_sheet import ParseSampleSheet
+from parse_variables_files import *
 from file_upload import FileUpload
 from launch_app import LaunchApp
 from file_downloader import FileDownloader
@@ -97,27 +96,23 @@ class CrukSmp:
         :return:
         '''
         # Always do these steps regardless of option
-        # Parse sample sheet to extract relevant sample information
-        my_sample_sheet = ParseSampleSheet(os.getcwd())
-        my_sample_sheet.read_in_sample_sheet()
-
-        # Pull out a series of samples to upload to BaseSpace
-        samples_to_upload = my_sample_sheet.identify_samples()
-        #samples_to_upload = pd.Series(["insert", "sample", "list"]) #TODO temp variable for a subset of samples
-
-        # Identify the worksheet number which will be used as the project name in BaseSpace
-        worksheet = my_sample_sheet.identify_worksheet()
+        # Parse variables files to extract relevant sample information
+        # Identify samples to upload to BaseSpace
+        samples_to_upload = identify_samples()
 
         # Load and parse out variables from variables files associated with each sample
-        all_variables = my_sample_sheet.load_all_variables(samples_to_upload, os.getcwd())
+        all_variables = load_all_variables(samples_to_upload, os.getcwd())
+
+        # Identify the worksheet number which will be used as the project name in BaseSpace
+        worksheet = identify_worksheet(all_variables)
 
         # Pair samples- DNA sample is key, RNA sample to look up- if No RNA sample, it is None
-        sample_pairs = my_sample_sheet.create_sample_pairs(all_variables)
+        sample_pairs = create_sample_pairs(all_variables)
         # Write out sample pairs to log file for checking if needed
         log.warning(f"sample pairs are {sample_pairs}")
 
         # Locate the fastqs associated with all samples
-        all_fastqs = my_sample_sheet.locate_all_fastqs(samples_to_upload, os.getcwd())
+        all_fastqs = locate_all_fastqs(samples_to_upload, os.getcwd())
 
         # Create a project in BaseSpace- will not create if it already exists, but will still return project id
         upload = FileUpload(self.authentication_token, worksheet, samples_to_upload, all_fastqs)

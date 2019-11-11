@@ -93,7 +93,7 @@ if [ $numSamplesInProject -eq $numSamplesWithFqs ]; then
     cd ..
 
     # Copy sample sheet to results folder of runs
-    cp /data/archive/fastq/"$seqId"/SampleSheet.csv .
+    #cp /data/archive/fastq/"$seqId"/SampleSheet.csv .
 
     # Activate Conda environment
     source /home/transfer/miniconda3/bin/activate SMP2v3
