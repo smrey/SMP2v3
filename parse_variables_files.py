@@ -10,7 +10,7 @@ def identify_samples():
 
 
 def identify_worksheet(variables):
-    worksheets = [(v.get('worklistId')) for k, v in variables.items()]
+    worksheets = [(v.get('worklistId')).strip('"') for k, v in variables.items()]  # Remove quotes in variables file
     worksheets = list(set(worksheets))
     if len(worksheets) > 1:
         raise Exception("More than one worksheet id present on this run. Not sure what to call the project in"
