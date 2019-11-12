@@ -96,7 +96,7 @@ if [ $numSamplesInProject -eq $numSamplesWithFqs ]; then
     #cp /data/archive/fastq/"$seqId"/SampleSheet.csv .
 
     # Activate Conda environment
-    source /home/transfer/miniconda3/bin/activate SMP2v3
+    source /home/transfer/miniconda3/bin/activate cruk
 
     # Run CRUK SMP2v3 pipeline
     echo python cruk_smp.py -c /data/diagnostics/pipelines/CRUK/CRUK-"$version"/access/
