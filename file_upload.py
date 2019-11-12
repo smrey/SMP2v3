@@ -3,6 +3,7 @@ import os
 import gzip
 import time
 import logging
+import numpy as np
 from Bio.SeqIO.QualityIO import FastqGeneralIterator
 from split_file import SplitFile
 from config import v1_api
@@ -140,19 +141,12 @@ class FileUpload:
 
     def get_fastq_metadata(self, fastq):
         read_metadata = {}
-        num_reads = 0
-        len_reads = 0
         # Open fastq
         with gzip.open(fastq, "rt") as fh_r1:
             fq_r1 = FastqGeneralIterator(fh_r1)
-            for index, (fq_id, fq_seq, fq_qual) in enumerate(fq_r1, 1):  # Python is zero indexed
-                # Read length
-                if len(fq_seq) > len_reads:
-                    len_reads = len(fq_seq)
-                # Number of reads
-                num_reads = index
-        read_metadata["len_reads"] = len_reads
-        read_metadata["num_reads"] = num_reads
+            fq_r1_array = np.array([len(fq_seq.strip()) for (fq_id, fq_seq, fq_qual) in fq_r1])
+        read_metadata["len_reads"] = np.amax(fq_r1_array)
+        read_metadata["num_reads"] = fq_r1_array.size
         return read_metadata
 
     def make_file(self, file_to_upload, sample_id):
